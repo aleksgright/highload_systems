@@ -1,0 +1,39 @@
+version: '3.8'
+
+services:
+  library-db:
+    image: postgres:15-alpine
+    container_name: library-db
+    environment:
+      POSTGRES_DB: library
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+    ports:
+      - "5432:5432"
+    volumes:
+      - library_db_data:/var/lib/postgresql/data
+    networks:
+      - library-network
+
+  library-app:
+    build: .
+    container_name: library-app
+    environment:
+      DB_HOST: library-db
+      DB_PORT: 5432
+      DB_NAME: library
+      DB_USERNAME: postgres
+      DB_PASSWORD: password
+    ports:
+      - "8080:8080"
+    depends_on:
+      - library-db
+    networks:
+      - library-network
+
+volumes:
+  library_db_data:
+
+networks:
+  library-network:
+    driver: bridge
