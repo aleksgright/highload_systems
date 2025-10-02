@@ -1,1 +1,1 @@
-rootProject.name = "lab"
+rootProject.name = "highload"
