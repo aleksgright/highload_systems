@@ -1,4 +1,4 @@
-package org.example.entities;
+package org.itmo.secs.entities;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;

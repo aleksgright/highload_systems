@@ -1,8 +1,8 @@
-package org.example.controllers;
+package org.itmo.secs.controllers;
 
 import lombok.AllArgsConstructor;
-import org.example.entities.Item;
-import org.example.repositories.ItemRepository;
+import org.itmo.secs.entities.Item;
+import org.itmo.secs.repositories.ItemRepository;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
