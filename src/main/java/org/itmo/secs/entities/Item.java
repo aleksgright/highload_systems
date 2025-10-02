@@ -20,7 +20,6 @@ public class Item {
     private Integer calories;
 
     @NotNull
-    @PositiveOrZero
     private String name;
 
     @NotNull

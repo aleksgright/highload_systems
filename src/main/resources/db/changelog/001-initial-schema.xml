@@ -28,5 +28,23 @@
         </createTable>
     </changeSet>
 
+    <changeSet id="002-create-meals-table" author="postgres">
+        <createTable tableName="meals">
+            <column name="id" type="BIGSERIAL" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="item_id" type="BIGSERIAL"/>
+            <column name="count" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="date" type="TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="time" type="VARCHAR(100)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+
 
 </databaseChangeLog>
