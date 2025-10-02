@@ -2,6 +2,7 @@ package org.itmo.secs.entities;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.PositiveOrZero;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -15,17 +16,22 @@ public class Item {
     private Long id;
 
     @NotNull
+    @PositiveOrZero
     private Integer calories;
 
     @NotNull
+    @PositiveOrZero
     private String name;
 
     @NotNull
+    @PositiveOrZero
     private Integer carbs;
 
     @NotNull
+    @PositiveOrZero
     private Integer protein;
 
     @NotNull
+    @PositiveOrZero
     private Integer fats;
 }
