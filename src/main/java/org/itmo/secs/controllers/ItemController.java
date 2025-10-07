@@ -1,8 +1,7 @@
 package org.itmo.secs.controllers;
 
 import lombok.AllArgsConstructor;
-import org.itmo.secs.entities.Item;
-import org.itmo.secs.repositories.ItemRepository;
+import org.itmo.secs.services.ItemService;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -12,26 +11,17 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping(value = "item")
 public class ItemController {
-    private final ItemRepository itemRepository;
+    private final ItemService itemService;
 
     @PostMapping("/add")
     public void addItem()
     {
-        Item item = new Item();
-        item.setId(1L);
-        item.setName("Boris");
-        item.setCalories(300);
-        item.setFats(299);
-        item.setCarbs(298);
-        item.setProtein(287);
-        itemRepository.save(item);
+        itemService.saveItem();
     }
 
     @GetMapping("/getByName")
     public String getItemByName(String name)
     {
-        if (itemRepository.findByName(name).isEmpty()) return "Item not found";
-        Item foundItem = itemRepository.findByName(name).get();
-        return "Carbs: " + foundItem.getCarbs() + " fats: " + foundItem.getFats();
+        return itemService.getItemByName(name);
     }
 }
