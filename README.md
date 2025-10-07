@@ -2,7 +2,6 @@
 
 Запyск:
 ```
-./gradlew build
 docker compose up
 ```
 
