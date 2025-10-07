@@ -1,9 +1,8 @@
 package org.itmo.secs.controllers;
 
 import lombok.AllArgsConstructor;
-import org.itmo.secs.entities.Item;
-import org.itmo.secs.entities.Meal;
-import org.itmo.secs.entities.enums.MealTime;
+import org.itmo.secs.model.entities.Meal;
+import org.itmo.secs.model.entities.enums.MealTime;
 import org.itmo.secs.repositories.ItemRepository;
 import org.itmo.secs.repositories.MealRepository;
 import org.springframework.web.bind.annotation.GetMapping;

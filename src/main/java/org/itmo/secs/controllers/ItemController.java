@@ -1,11 +1,10 @@
 package org.itmo.secs.controllers;
 
 import lombok.AllArgsConstructor;
+import org.itmo.secs.model.entities.Item;
+import org.itmo.secs.model.entities.dto.ItemDto;
 import org.itmo.secs.services.ItemService;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @AllArgsConstructor
 @RestController
@@ -14,9 +13,15 @@ public class ItemController {
     private final ItemService itemService;
 
     @PostMapping("/add")
-    public void addItem()
+    public void addItem(@RequestBody ItemDto itemDto)
     {
-        itemService.saveItem();
+        Item item = new Item(); //TODO add converter
+        item.setName(itemDto.getName());
+        item.setCalories(itemDto.getCalories());
+        item.setCarbs(itemDto.getCarbs());
+        item.setProtein(itemDto.getProtein());
+        item.setFats(itemDto.getFats());
+        itemService.saveItem(item);
     }
 
     @GetMapping("/getByName")

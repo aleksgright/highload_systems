@@ -1,7 +1,7 @@
 package org.itmo.secs.services;
 
 import lombok.AllArgsConstructor;
-import org.itmo.secs.entities.Item;
+import org.itmo.secs.model.entities.Item;
 import org.itmo.secs.repositories.ItemRepository;
 import org.springframework.stereotype.Service;
 
@@ -10,15 +10,8 @@ import org.springframework.stereotype.Service;
 public class ItemService {
     private final ItemRepository itemRepository;
 
-    public void saveItem()
+    public void saveItem(Item item)
     {
-        Item item = new Item();
-        item.setId(1L);
-        item.setName("Boris");
-        item.setCalories(300);
-        item.setFats(299);
-        item.setCarbs(298);
-        item.setProtein(287);
         itemRepository.save(item);
     }
 

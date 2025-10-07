@@ -1,6 +1,6 @@
 package org.itmo.secs.repositories;
 
-import org.itmo.secs.entities.Meal;
+import org.itmo.secs.model.entities.Meal;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

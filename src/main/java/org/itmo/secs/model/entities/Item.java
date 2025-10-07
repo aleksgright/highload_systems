@@ -1,4 +1,4 @@
-package org.itmo.secs.entities;
+package org.itmo.secs.model.entities;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
