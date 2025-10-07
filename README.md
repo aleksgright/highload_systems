@@ -1,3 +1,5 @@
+Описание лаб https://github.com/Discipliny/highload_systems
+
 Запyск:
 ```
 ./gradlew build
