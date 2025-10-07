@@ -1,6 +1,6 @@
 package org.itmo.secs.repositories;
 
-import org.itmo.secs.entities.Item;
+import org.itmo.secs.model.entities.Item;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

@@ -1,4 +1,4 @@
-package org.itmo.secs.entities;
+package org.itmo.secs.model.entities;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
@@ -6,8 +6,7 @@ import jakarta.validation.constraints.PositiveOrZero;
 import java.time.LocalDate;
 import lombok.Getter;
 import lombok.Setter;
-import org.itmo.secs.entities.Item;
-import org.itmo.secs.entities.enums.MealTime;
+import org.itmo.secs.model.entities.enums.MealTime;
 
 @Entity
 @Table(name = "meals")
