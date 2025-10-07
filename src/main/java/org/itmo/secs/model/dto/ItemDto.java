@@ -1,4 +1,4 @@
-package org.itmo.secs.model.entities.dto;
+package org.itmo.secs.model.dto;
 
 import lombok.Getter;
 import lombok.Setter;
