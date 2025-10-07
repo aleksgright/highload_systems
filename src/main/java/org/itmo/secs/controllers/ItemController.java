@@ -2,7 +2,7 @@ package org.itmo.secs.controllers;
 
 import lombok.AllArgsConstructor;
 import org.itmo.secs.model.entities.Item;
-import org.itmo.secs.model.entities.dto.ItemDto;
+import org.itmo.secs.model.dto.ItemDto;
 import org.itmo.secs.services.ItemService;
 import org.springframework.web.bind.annotation.*;
 
