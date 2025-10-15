@@ -4,6 +4,8 @@ import lombok.AllArgsConstructor;
 import org.itmo.secs.model.entities.Item;
 import org.itmo.secs.model.dto.ItemDto;
 import org.itmo.secs.services.ItemService;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @AllArgsConstructor
@@ -25,8 +27,9 @@ public class ItemController {
     }
 
     @GetMapping("/getByName")
-    public String getItemByName(String name)
+    public ResponseEntity<Item> getItemByName(String name)
     {
-        return itemService.getItemByName(name);
+        Item item = itemService.getItemByName(name);
+        return item != null ? new ResponseEntity<>(item, HttpStatus.OK) : new ResponseEntity<>(null, HttpStatus.NOT_FOUND);
     }
 }
