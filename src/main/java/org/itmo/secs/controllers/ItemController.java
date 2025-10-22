@@ -2,7 +2,7 @@ package org.itmo.secs.controllers;
 
 import lombok.AllArgsConstructor;
 import org.itmo.secs.model.entities.Item;
-import org.itmo.secs.model.dto.ItemDto;
+import org.itmo.secs.model.dto.ItemCreateDto;
 import org.itmo.secs.services.ItemService;
 import org.springframework.core.convert.ConversionService;
 import org.springframework.http.HttpStatus;
@@ -17,9 +17,9 @@ public class ItemController {
     private final ItemService itemService;
 
     @PostMapping("/create")
-    public ResponseEntity<Void> create(@RequestBody ItemDto itemDto)
+    public ResponseEntity<Void> create(@RequestBody ItemCreateDto itemCreateDto)
     {
-        itemService.saveItem(conversionService.convert(itemDto, Item.class));
+        itemService.saveItem(conversionService.convert(itemCreateDto, Item.class));
         return ResponseEntity.ok().build();
     }
 

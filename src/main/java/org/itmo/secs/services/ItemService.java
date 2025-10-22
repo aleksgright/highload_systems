@@ -5,8 +5,6 @@ import org.itmo.secs.model.entities.Item;
 import org.itmo.secs.repositories.ItemRepository;
 import org.springframework.stereotype.Service;
 
-import java.util.Optional;
-
 @Service
 @AllArgsConstructor
 public class ItemService {
@@ -17,9 +15,12 @@ public class ItemService {
         itemRepository.save(item);
     }
 
+    public Item findById(long id) {
+        return itemRepository.findById(id).orElse(null);
+    }
+
     public Item getItemByName(String name)
     {
-        Optional<Item> optionalItem = itemRepository.findByName(name);
-        return optionalItem.orElse(null);
+        return itemRepository.findByName(name).orElse(null);
     }
 }

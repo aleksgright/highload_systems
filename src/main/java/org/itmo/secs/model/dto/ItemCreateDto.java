@@ -5,7 +5,7 @@ import lombok.Setter;
 
 @Getter
 @Setter
-public class ItemDto {
+public class ItemCreateDto {
     private Integer calories;
     private String name;
     private Integer carbs;
