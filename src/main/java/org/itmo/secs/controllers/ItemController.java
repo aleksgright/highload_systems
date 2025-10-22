@@ -4,6 +4,7 @@ import lombok.AllArgsConstructor;
 import org.itmo.secs.model.entities.Item;
 import org.itmo.secs.model.dto.ItemDto;
 import org.itmo.secs.services.ItemService;
+import org.springframework.core.convert.ConversionService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -12,22 +13,18 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping(value = "item")
 public class ItemController {
+    private final ConversionService conversionService;
     private final ItemService itemService;
 
-    @PostMapping("/add")
-    public void addItem(@RequestBody ItemDto itemDto)
+    @PostMapping("/create")
+    public ResponseEntity<Void> create(@RequestBody ItemDto itemDto)
     {
-        Item item = new Item(); //TODO add converter
-        item.setName(itemDto.getName());
-        item.setCalories(itemDto.getCalories());
-        item.setCarbs(itemDto.getCarbs());
-        item.setProtein(itemDto.getProtein());
-        item.setFats(itemDto.getFats());
-        itemService.saveItem(item);
+        itemService.saveItem(conversionService.convert(itemDto, Item.class));
+        return ResponseEntity.ok().build();
     }
 
-    @GetMapping("/getByName")
-    public ResponseEntity<Item> getItemByName(String name)
+    @GetMapping("/findByName")
+    public ResponseEntity<Item> findByName(String name)
     {
         Item item = itemService.getItemByName(name);
         return item != null ? new ResponseEntity<>(item, HttpStatus.OK) : new ResponseEntity<>(null, HttpStatus.NOT_FOUND);
