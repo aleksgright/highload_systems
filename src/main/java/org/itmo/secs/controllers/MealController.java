@@ -3,8 +3,6 @@ package org.itmo.secs.controllers;
 import lombok.AllArgsConstructor;
 import org.itmo.secs.model.dto.MealCreateDto;
 import org.itmo.secs.model.entities.Meal;
-import org.itmo.secs.repositories.ItemRepository;
-import org.itmo.secs.repositories.MealRepository;
 import org.itmo.secs.services.MealService;
 import org.springframework.core.convert.ConversionService;
 import org.springframework.web.bind.annotation.*;
