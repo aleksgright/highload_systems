@@ -20,6 +20,16 @@ public class MealService {
         mealRepository.save(meal);
     }
 
+    public void update(Meal meal)
+    {
+        mealRepository.save(meal);
+    }
+
+    public Meal findById(long id) {
+        return mealRepository.findById(id).orElse(null);
+    }
+
+
     @GetMapping("/findByDate")
     public List<Meal> findByDate(LocalDate date)
     {

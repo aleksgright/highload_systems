@@ -32,7 +32,7 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{base_url}}:{{port}}/item/findByName?name=uuh",
+							"raw": "{{base_url}}:{{port}}/item/findByName?name=snacker",
 							"host": [
 								"{{base_url}}"
 							],
@@ -44,7 +44,7 @@
 							"query": [
 								{
 									"key": "name",
-									"value": "uuh"
+									"value": "snacker"
 								}
 							]
 						},
@@ -75,7 +75,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n\t\"name\": \"uuh\",\n    \"calories\": 12,\n    \"carbs\": 2,\n    \"protein\": 4,\n    \"fats\": 1\n}",
+							"raw": "{\n\t\"name\": \"blin4iik\",\n    \"calories\": 12,\n    \"carbs\": 2,\n    \"protein\": 4,\n    \"fats\": 1\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -96,6 +96,34 @@
 						"description": "This is a POST request, submitting data to an API via the request body. This request submits JSON data, and the data is reflected in the response.\n\nA successful POST request typically returns a `200 OK` or `201 Created` response code."
 					},
 					"response": []
+				},
+				{
+					"name": "updateItem",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"id\": 1,\r\n\t\"name\": \"snacker\",\r\n    \"calories\": 12,\r\n    \"carbs\": 2,\r\n    \"protein\": 4,\r\n    \"fats\": 1\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}:{{port}}/item/update",
+							"host": [
+								"{{base_url}}"
+							],
+							"port": "{{port}}",
+							"path": [
+								"item",
+								"update"
+							]
+						}
+					},
+					"response": []
 				}
 			]
 		},
@@ -109,7 +137,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\r\n\t\"itemId\": \"5\",\r\n    \"count\": 12,\r\n    \"time\": \"dinner\"\r\n}",
+							"raw": "{\r\n\t\"itemId\": 1,\r\n    \"count\": 17,\r\n    \"time\": \"dinner\"\r\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -136,7 +164,7 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{base_url}}:{{port}}/meal/findByDate?year=2025&month=10&day=23",
+							"raw": "{{base_url}}:{{port}}/meal/findByDate?year=2025&month=10&day=28",
 							"host": [
 								"{{base_url}}"
 							],
@@ -156,8 +184,36 @@
 								},
 								{
 									"key": "day",
-									"value": "23"
+									"value": "28"
 								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "updateMeal",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"id\": 4,\r\n\t\"itemId\": \"2\",\r\n    \"count\": 2,\r\n    \"time\": \"dinner\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}:{{port}}/meal/update",
+							"host": [
+								"{{base_url}}"
+							],
+							"port": "{{port}}",
+							"path": [
+								"meal",
+								"update"
 							]
 						}
 					},
