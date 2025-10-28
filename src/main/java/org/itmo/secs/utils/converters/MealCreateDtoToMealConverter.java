@@ -10,7 +10,7 @@ import org.springframework.stereotype.Component;
 
 @Component
 @AllArgsConstructor
-public class MealDtoToMealConverter implements Converter<MealCreateDto, Meal> {
+public class MealCreateDtoToMealConverter implements Converter<MealCreateDto, Meal> {
     private final ItemService itemService;
 
     @Override
@@ -19,6 +19,7 @@ public class MealDtoToMealConverter implements Converter<MealCreateDto, Meal> {
         ret.setCount(mealCreateDto.getCount());
         ret.setTime(MealTime.valueOf(mealCreateDto.getTime().toUpperCase()));
         ret.setItem(itemService.findById(mealCreateDto.getItemId()));
+        ret.setUserId(1);
         return ret;
     }
 }

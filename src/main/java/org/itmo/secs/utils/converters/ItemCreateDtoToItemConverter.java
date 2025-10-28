@@ -8,7 +8,7 @@ import org.springframework.stereotype.Component;
 
 @Component
 @AllArgsConstructor
-public class ItemDtoToItemConverter implements Converter<ItemCreateDto, Item> {
+public class ItemCreateDtoToItemConverter implements Converter<ItemCreateDto, Item> {
     @Override
     public Item convert(ItemCreateDto itemCreateDto) {
         Item ret = new Item();
@@ -17,6 +17,7 @@ public class ItemDtoToItemConverter implements Converter<ItemCreateDto, Item> {
         ret.setCarbs(itemCreateDto.getCarbs());
         ret.setProtein(itemCreateDto.getProtein());
         ret.setFats(itemCreateDto.getFats());
+        ret.setCreatorId(1);
         return ret;
     }
 }

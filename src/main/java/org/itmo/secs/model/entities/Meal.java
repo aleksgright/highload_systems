@@ -21,6 +21,7 @@ public class Meal {
 
     @ManyToOne
     @JoinColumn(name = "item_id")
+    @NotNull
     private Item item;
 
     @NotNull
@@ -29,6 +30,8 @@ public class Meal {
 
     @NotNull
     private LocalDate date;
+
+    private long userId;
 
     @NotNull
     @Enumerated(EnumType.STRING)

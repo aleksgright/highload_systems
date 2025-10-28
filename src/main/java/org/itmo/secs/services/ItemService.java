@@ -10,7 +10,12 @@ import org.springframework.stereotype.Service;
 public class ItemService {
     private final ItemRepository itemRepository;
 
-    public void saveItem(Item item)
+    public void save(Item item)
+    {
+        itemRepository.save(item);
+    }
+
+    public void update(Item item)
     {
         itemRepository.save(item);
     }
@@ -19,7 +24,7 @@ public class ItemService {
         return itemRepository.findById(id).orElse(null);
     }
 
-    public Item getItemByName(String name)
+    public Item findByName(String name)
     {
         return itemRepository.findByName(name).orElse(null);
     }

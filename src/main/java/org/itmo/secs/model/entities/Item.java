@@ -33,4 +33,6 @@ public class Item {
     @NotNull
     @PositiveOrZero
     private Integer fats;
+
+    private long creatorId;
 }

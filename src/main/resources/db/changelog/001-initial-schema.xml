@@ -25,6 +25,7 @@
             <column name="fats" type="INT">
                 <constraints nullable="false"/>
             </column>
+            <column name="creator_id" type="BIGINT" autoIncrement="false"/>
         </createTable>
     </changeSet>
 
@@ -43,6 +44,7 @@
             <column name="time" type="VARCHAR(100)">
                 <constraints nullable="false"/>
             </column>
+            <column name="user_id" type="BIGINT" autoIncrement="false"/>
         </createTable>
     </changeSet>
 
