@@ -8,13 +8,13 @@ import java.time.ZoneId;
 
 import lombok.Getter;
 import lombok.Setter;
-import org.itmo.secs.model.entities.enums.MealTime;
+import org.itmo.secs.model.entities.enums.Meal;
 
 @Entity
-@Table(name = "meals")
+@Table(name = "dishes")
 @Getter
 @Setter
-public class Meal {
+public class Dish {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -35,7 +35,7 @@ public class Meal {
 
     @NotNull
     @Enumerated(EnumType.STRING)
-    private MealTime time;
+    private Meal meal;
 
     @PrePersist
     private void beforeSaving() {

@@ -1,5 +1,5 @@
 package org.itmo.secs.model.entities.enums;
 
-public enum MealTime {
+public enum Meal {
     BREAKFAST, LUNCH, DINNER
 }
