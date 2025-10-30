@@ -8,6 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.itmo.secs.model.entities.Item;
 import org.itmo.secs.repositories.*;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
@@ -17,12 +18,13 @@ import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
+import io.restassured.RestAssured;
+
 @Testcontainers
-@SpringBootTest
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 public class DishControllerTest {
     @LocalServerPort
-    private Integer port;
-
+    private String port;
     @Container
     static PostgreSQLContainer<?> pgContainer = new PostgreSQLContainer<>("postgres:15-alpine")
             .withDatabaseName("test-db")
@@ -46,6 +48,8 @@ public class DishControllerTest {
     void setUp() {
         itemRepository.deleteAll();
         dishRepository.deleteAll();
+
+        RestAssured.baseURI = "http://localhost:" + port;
 
         List<Item> items = List.of(
                 new Item(1L, 300, "Milk1", 20, 10, 50, 0L),

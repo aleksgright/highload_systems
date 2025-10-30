@@ -12,6 +12,7 @@ import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
+import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -43,6 +44,15 @@ public class DbIntegrationTest {
     void setUp() {
         itemRepository.deleteAll();
         dishRepository.deleteAll();
+
+        List<Item> items = List.of(
+                new Item(1L, 300, "Milk1", 20, 10, 50, 0L),
+                new Item(2L, 300, "Milk2", 20, 10, 50, 0L),
+                new Item(3L, 300, "Milk3", 20, 10, 50, 0L),
+                new Item(4L, 300, "Milk4", 20, 10, 50, 0L),
+                new Item(5L, 300, "Milk5", 20, 10, 50, 0L));
+
+        itemRepository.saveAll(items);
     }
 
     @Test

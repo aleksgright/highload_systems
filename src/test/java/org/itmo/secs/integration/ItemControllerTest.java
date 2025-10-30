@@ -20,14 +20,14 @@ import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
+
 import com.google.gson.Gson;
 
 @Testcontainers
-@SpringBootTest
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 public class ItemControllerTest {
     @LocalServerPort
-    private Integer port;
-
+    private String port;
     @Container
     static PostgreSQLContainer<?> pgContainer = new PostgreSQLContainer<>("postgres:15-alpine")
             .withDatabaseName("test-db")
@@ -72,13 +72,13 @@ public class ItemControllerTest {
         requestBodyDto.setProtein(200);
 
         String requestBody = gson.toJson(requestBodyDto);
-        // RestAssured.given()
-        // .contentType("application/json")
-        // .body(requestBody)
-        // .post("/create")
-        // .then()
-        // .statusCode(200);
+        RestAssured.given()
+                .contentType("application/json")
+                .body(requestBody)
+                .post("/create")
+                .then()
+                .statusCode(200);
 
-        // assertTrue(itemRepository.findByName(requestBodyDto.getName()).isPresent());
+        assertTrue(itemRepository.findByName(requestBodyDto.getName()).isPresent());
     }
 }

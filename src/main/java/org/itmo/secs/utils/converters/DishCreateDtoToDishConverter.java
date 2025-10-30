@@ -18,7 +18,8 @@ public class DishCreateDtoToDishConverter implements Converter<DishCreateDto, Di
     @Override
     public Dish convert(DishCreateDto dishCreateDto) {
         Item foundItem = itemService.findById(dishCreateDto.getItemId());
-        if (foundItem == null) throw new ItemNotFoundException("Item with this id was not found");
+        if (foundItem == null)
+            throw new ItemNotFoundException("Item with this id was not found");
         Dish ret = new Dish();
         ret.setCount(dishCreateDto.getCount());
         ret.setMeal(Meal.valueOf(dishCreateDto.getMeal().toUpperCase()));
