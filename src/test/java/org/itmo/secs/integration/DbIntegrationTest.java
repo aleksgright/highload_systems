@@ -1,8 +1,8 @@
 package org.itmo.secs.integration;
 
-
-import org.itmo.secs.entities.Item;
-import org.itmo.secs.repositories.ItemRepository;
+import org.itmo.secs.model.entities.Item;
+import org.itmo.secs.repositories.*;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -11,7 +11,6 @@ import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
-
 
 import java.util.Optional;
 
@@ -37,6 +36,14 @@ public class DbIntegrationTest {
 
     @Autowired
     private ItemRepository itemRepository;
+    @Autowired
+    private DishRepository dishRepository;
+
+    @BeforeEach
+    void setUp() {
+        itemRepository.deleteAll();
+        dishRepository.deleteAll();
+    }
 
     @Test
     void testSaveAndFindItem() {
