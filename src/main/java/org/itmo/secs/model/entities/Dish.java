@@ -15,6 +15,19 @@ import org.itmo.secs.model.entities.enums.Meal;
 @Getter
 @Setter
 public class Dish {
+    public Dish(Long id, @NotNull Item item, @NotNull @PositiveOrZero Integer count, @NotNull LocalDate date,
+            long userId, @NotNull Meal meal) {
+        this.id = id;
+        this.item = item;
+        this.count = count;
+        this.date = date;
+        this.userId = userId;
+        this.meal = meal;
+    }
+
+    public Dish() {
+    }
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;

@@ -28,8 +28,8 @@
         </createTable>
     </changeSet>
 
-    <changeSet id="002-create-meals-table" author="postgres">
-        <createTable tableName="meals">
+    <changeSet id="002-create-dishes-table" author="postgres">
+        <createTable tableName="dishes">
             <column name="id" type="BIGSERIAL" autoIncrement="true">
                 <constraints primaryKey="true" nullable="false"/>
             </column>
@@ -40,7 +40,7 @@
             <column name="date" type="TIMESTAMP">
                 <constraints nullable="false"/>
             </column>
-            <column name="time" type="VARCHAR(100)">
+            <column name="meal" type="VARCHAR(100)">
                 <constraints nullable="false"/>
             </column>
         </createTable>
