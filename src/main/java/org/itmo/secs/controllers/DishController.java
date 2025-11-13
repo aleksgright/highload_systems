@@ -2,7 +2,7 @@ package org.itmo.secs.controllers;
 
 import lombok.AllArgsConstructor;
 import org.itmo.secs.model.dto.DishCreateDto;
-import org.itmo.secs.model.dto.DishUpdateDto;
+import org.itmo.secs.model.dto.DishUpdateNameDto;
 import org.itmo.secs.model.entities.Dish;
 import org.itmo.secs.services.DishService;
 import org.itmo.secs.utils.exceptions.ItemNotFoundException;
@@ -31,11 +31,11 @@ public class DishController {
         return ResponseEntity.ok().build();
     }
 
-    @PutMapping("/update")
-    public ResponseEntity<Void> update(@RequestBody DishUpdateDto dishUpdateDto)
+    @PutMapping("/updateName")
+    public ResponseEntity<Void> update(@RequestBody DishUpdateNameDto dishUpdateNameDto)
     {
         try {
-            dishService.create(conversionService.convert(dishUpdateDto, Dish.class));
+            dishService.create(conversionService.convert(dishUpdateNameDto, Dish.class));
         } catch (ItemNotFoundException e) {
             return ResponseEntity.notFound().build(); //TODO: NE RABOTAET
         }
