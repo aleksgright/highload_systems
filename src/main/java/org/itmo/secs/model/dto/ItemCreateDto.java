@@ -3,6 +3,7 @@ package org.itmo.secs.model.dto;
 import lombok.Getter;
 import lombok.Setter;
 
+/* Создает запись в Item */
 @Getter
 @Setter
 public class ItemCreateDto {
