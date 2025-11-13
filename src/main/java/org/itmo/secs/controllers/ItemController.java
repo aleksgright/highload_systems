@@ -24,7 +24,7 @@ public class ItemController {
         return ResponseEntity.ok().build();
     }
 
-    @PutMapping("/update")
+    @PutMapping("/updateName")
     public ResponseEntity<Void> update(@RequestBody ItemUpdateDto itemUpdateDto)
     {
         itemService.update(conversionService.convert(itemUpdateDto, Item.class));

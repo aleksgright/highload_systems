@@ -7,7 +7,7 @@ import lombok.Setter;
 @Getter
 @Setter
 public class DishAddItemDto {
-    private long dishId;
     private long itemId;
-    private long count;
+    private long dishId;
+    private int count;
 }
