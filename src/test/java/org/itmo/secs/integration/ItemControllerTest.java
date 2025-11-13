@@ -1,6 +1,5 @@
 package org.itmo.secs.integration;
 
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
@@ -75,7 +74,7 @@ public class ItemControllerTest {
         RestAssured.given()
                 .contentType("application/json")
                 .body(requestBody)
-                .post("/create")
+                .post("/item/create")
                 .then()
                 .statusCode(200);
 
