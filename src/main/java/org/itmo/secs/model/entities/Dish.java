@@ -5,6 +5,8 @@ import jakarta.validation.constraints.NotNull;
 
 import lombok.Getter;
 import lombok.Setter;
+
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
@@ -22,11 +24,15 @@ public class Dish {
     @NotNull
     private String name;
 
-    @OneToMany(mappedBy = "dishes")
+    @OneToMany
     @NotNull
-    private List<ItemDish> items_dishes;
+    @ElementCollection(targetClass = ItemDish.class, fetch = FetchType.EAGER)
+    @CollectionTable(name = "items_dishes", joinColumns = @JoinColumn(name = "id"))
+    private List<ItemDish> items_dishes = new ArrayList<>();
 
-    @ManyToMany(mappedBy = "dishes")
+    @ManyToMany
     @NotNull
-    private List<Menu> menus;
+    @ElementCollection(targetClass = Menu.class, fetch = FetchType.EAGER)
+    @CollectionTable(name = "menus", joinColumns = @JoinColumn(name = "id"))
+    private List<Menu> menus = new ArrayList<>();
 }

@@ -10,9 +10,6 @@ import org.springframework.core.convert.ConversionService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.LocalDate;
-import java.util.List;
-
 @AllArgsConstructor
 @RestController
 @RequestMapping(value = "dish")
@@ -43,9 +40,9 @@ public class DishController {
     }
 
 
-    @GetMapping("/findByDate")
-    public List<Dish> findByDate(Integer year, Integer month, Integer day)
-    {
-        return dishService.findByDate(LocalDate.of(year, month, day));
-    }
+//    @GetMapping("/findByDate")
+//    public List<Dish> findByDate(Integer year, Integer month, Integer day)
+//    {
+//        return dishService.findByDate(LocalDate.of(year, month, day));
+//    }
 }
