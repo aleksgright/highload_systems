@@ -2,10 +2,10 @@ package org.itmo.secs.model.entities;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.PositiveOrZero;
 
 import java.time.LocalDate;
 import java.time.ZoneId;
+import java.util.ArrayList;
 import java.util.List;
 
 import lombok.Getter;
@@ -24,9 +24,11 @@ public class Menu {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToMany
+    @ManyToMany(mappedBy = "menus")
     @NotNull
-    private List<Dish> dishes;
+//    @ElementCollection(targetClass = Menu.class, fetch = FetchType.EAGER)
+//    @CollectionTable(name = "dishes", joinColumns = @JoinColumn(name = "id"))
+    private List<Dish> dishes = new ArrayList<>();
 
     @NotNull
     private LocalDate date;

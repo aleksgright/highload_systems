@@ -2,6 +2,7 @@ package org.itmo.secs.model.entities;
 
 import jakarta.persistence.*;
 
+import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -22,4 +23,7 @@ public class ItemDish {
     @MapsId("dishId")
     @JoinColumn(name = "dish_id")
     private Dish dish;
+
+    @NotNull
+    private int count;
 }

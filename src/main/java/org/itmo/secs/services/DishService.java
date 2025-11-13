@@ -4,10 +4,6 @@ import lombok.AllArgsConstructor;
 import org.itmo.secs.model.entities.Dish;
 import org.itmo.secs.repositories.DishRepository;
 import org.springframework.stereotype.Service;
-import org.springframework.web.bind.annotation.GetMapping;
-
-import java.time.LocalDate;
-import java.util.List;
 
 @Service
 @AllArgsConstructor
@@ -30,9 +26,9 @@ public class DishService {
     }
 
 
-    @GetMapping("/findByDate")
-    public List<Dish> findByDate(LocalDate date)
-    {
-        return dishRepository.findAllByDate(date);
-    }
+//    @GetMapping("/findByDate")
+//    public List<Dish> findByDate(LocalDate date)
+//    {
+//        return dishRepository.findAllByDate(date);
+//    }
 }
