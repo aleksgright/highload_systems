@@ -18,23 +18,21 @@ public class ItemController {
     private final ItemService itemService;
 
     @PostMapping("/create")
-    public ResponseEntity<Void> create(@RequestBody ItemCreateDto itemCreateDto)
-    {
+    public ResponseEntity<Void> create(@RequestBody ItemCreateDto itemCreateDto) {
         itemService.save(conversionService.convert(itemCreateDto, Item.class));
         return ResponseEntity.ok().build();
     }
 
-    @PutMapping("/updateName")
-    public ResponseEntity<Void> update(@RequestBody ItemUpdateDto itemUpdateDto)
-    {
+    @PutMapping("/update")
+    public ResponseEntity<Void> update(@RequestBody ItemUpdateDto itemUpdateDto) {
         itemService.update(conversionService.convert(itemUpdateDto, Item.class));
         return ResponseEntity.ok().build();
     }
 
     @GetMapping("/findByName")
-    public ResponseEntity<Item> findByName(String name)
-    {
+    public ResponseEntity<Item> findByName(String name) {
         Item item = itemService.findByName(name);
-        return item != null ? new ResponseEntity<>(item, HttpStatus.OK) : new ResponseEntity<>(null, HttpStatus.NOT_FOUND);
+        return item != null ? new ResponseEntity<>(item, HttpStatus.OK)
+                : new ResponseEntity<>(null, HttpStatus.NOT_FOUND);
     }
 }
