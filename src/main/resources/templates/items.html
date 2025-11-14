@@ -8,9 +8,7 @@
         <div class="container">
         <h1>Все продукты</h1>
         
-        <!-- Контейнер для данных -->
         <div id="data-container">
-            <!-- Изначальные данные -->
             <div th:each="item : ${initialData}" class="data-item">
                 <h3 th:text="${item.name}">Заголовок</h3>
                 <p th:text="${item.id}">Id</p>
@@ -18,15 +16,13 @@
             </div>
         </div>
         
-        <!-- Кнопка загрузки -->
         <div style="text-align: center;">
             <button id="load-more-btn" class="load-more-btn" 
                     th:attr="data-page=${currentPage}, data-total-pages=${totalPages}">
                 Загрузить еще
             </button>
         </div>
-        
-        <!-- Индикатор загрузки -->
+
         <div id="loading-indicator" class="loading" style="display: none;">
             Загрузка...
         </div>
@@ -56,7 +52,6 @@
                         pageNumber: nextPage,
                     },
                     success: function(response) {
-                        // Добавляем новые данные в контейнер
                         response.forEach(element => {
                             dataContainer.append(
                                 `<div class="data-item">
@@ -67,7 +62,6 @@
                             );
                         });
                         
-                        // Обновляем данные кнопки
                         loadMoreBtn.data('page', nextPage);
                         if (response.length != 0) {
                             loadMoreBtn.prop('disabled', false);
