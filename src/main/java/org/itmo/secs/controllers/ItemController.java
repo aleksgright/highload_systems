@@ -10,6 +10,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @AllArgsConstructor
 @RestController
 @RequestMapping(value = "item")
@@ -34,5 +36,11 @@ public class ItemController {
         Item item = itemService.findByName(name);
         return item != null ? new ResponseEntity<>(item, HttpStatus.OK)
                 : new ResponseEntity<>(null, HttpStatus.NOT_FOUND);
+    }
+
+    @GetMapping("/all")
+    public ResponseEntity<List<Item>> findAll(int pageNumber) {
+        List<Item> items = itemService.findAll(pageNumber);
+        return ResponseEntity.ok(items);
     }
 }
