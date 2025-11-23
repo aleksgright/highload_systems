@@ -24,10 +24,10 @@ public class Menu {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToMany(mappedBy = "menus")
+    @ManyToMany
     @NotNull
-//    @ElementCollection(targetClass = Menu.class, fetch = FetchType.EAGER)
-//    @CollectionTable(name = "dishes", joinColumns = @JoinColumn(name = "id"))
+    // @ElementCollection(targetClass = Menu.class, fetch = FetchType.EAGER)
+    // @CollectionTable(name = "dishes", joinColumns = @JoinColumn(name = "id"))
     private List<Dish> dishes = new ArrayList<>();
 
     @NotNull

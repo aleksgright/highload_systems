@@ -22,7 +22,7 @@ public class ItemDishService {
         Optional<ItemDish> itemDishOpt = itemDishRepository.findById_ItemIdAndId_DishId(item.getId(), dish.getId());
         ItemDish persistUnit = new ItemDish();
         if (itemDishOpt.isEmpty()) {
-            //persistUnit.setId(new ItemDishId(item.getId(), dish.getId()));
+            persistUnit.setId(new ItemDishId());
             persistUnit.setItem(item);
             persistUnit.setDish(dish);
             persistUnit.setCount(count);

@@ -30,6 +30,7 @@ public class DishService {
         }
         itemDishService.updateItemDishCount(item, dish, count);
         dish.getItems_dishes().add(itemDishService.findById(itemId, dishId));
+        item.getItems_dishes().add(itemDishService.findById(itemId, dishId));
     }
 
     public void updateName(Dish dish)
