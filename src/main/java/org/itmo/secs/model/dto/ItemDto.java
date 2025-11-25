@@ -1,6 +1,6 @@
 package org.itmo.secs.model.dto;
 
-record ItemDto(
+public record ItemDto(
     Long id,
     String name,
     Integer carbs,

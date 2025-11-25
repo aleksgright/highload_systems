@@ -1,6 +1,6 @@
 package org.itmo.secs.model.dto;
 
-record MenuAddDishDto(
+public record MenuAddDishDto(
     Long menuId,
     Long dishId
 ) { }

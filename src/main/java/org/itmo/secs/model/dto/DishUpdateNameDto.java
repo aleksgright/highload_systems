@@ -1,6 +1,6 @@
 package org.itmo.secs.model.dto;
 
-record DishUpdateNameDto(
+public record DishUpdateNameDto(
     Long id,
     String name
 ) { }

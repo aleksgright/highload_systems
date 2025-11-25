@@ -1,7 +1,7 @@
 package org.itmo.secs.model.dto;
 
-record MenuUpdateDto(
-    private Long id,
-    private String meal,
-    private Long userId
+public record MenuUpdateDto(
+    Long id,
+    String meal,
+    Long userId
 ) { }

@@ -1,6 +1,6 @@
 package org.itmo.secs.model.dto;
 
-record MenuDeleteDishDto(
+public record MenuDeleteDishDto(
     Long menuId,
     Long dishId
 ) { }

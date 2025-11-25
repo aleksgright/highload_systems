@@ -1,6 +1,6 @@
 package org.itmo.secs.model.dto;
 
-record ItemCreateDto(
+public record ItemCreateDto(
     String name,
     Integer calories,
     Integer carbs,

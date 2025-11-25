@@ -1,6 +1,6 @@
 package org.itmo.secs.model.dto;
 
-record DishDeleteItemDto(
+public record DishDeleteItemDto(
     Long dishId,
     Long itemId
 ) { }

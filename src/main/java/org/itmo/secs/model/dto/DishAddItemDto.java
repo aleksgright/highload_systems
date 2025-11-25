@@ -1,7 +1,7 @@
 package org.itmo.secs.model.dto;
 
-record DishAddItemDto(
+public record DishAddItemDto(
     Long itemId,
     Long dishId,
-    Integer count,
-)
+    Integer count
+) { }

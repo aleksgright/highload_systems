@@ -1,5 +1,6 @@
 package org.itmo.secs.model.dto;
 
-public record DishCreateDto(
+public record UserDto(
+    Long id,
     String name
 ) { }

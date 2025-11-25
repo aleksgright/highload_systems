@@ -1,6 +1,6 @@
 package org.itmo.secs.model.dto;
 
-record MenuCreateDto(
+public record MenuCreateDto(
     String meal,
     Long userId
 ) { }

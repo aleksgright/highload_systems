@@ -1,6 +1,6 @@
 package org.itmo.secs.model.dto;
 
-record ItemUpdateDto(
+public record ItemUpdateDto(
     Long id,
     String name,
     Integer calories,
