@@ -5,6 +5,7 @@ import org.itmo.secs.model.entities.Dish;
 import org.itmo.secs.model.entities.Item;
 import org.itmo.secs.model.entities.ItemDish;
 import org.itmo.secs.repositories.DishRepository;
+import org.itmo.secs.utils.exceptions.ItemNotFoundException;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -26,7 +27,7 @@ public class DishService {
             throw new RuntimeException();
         }
         if (item == null) {
-            throw new RuntimeException();
+            throw new ItemNotFoundException("Item " + itemId + " was not found");
         }
         itemDishService.updateItemDishCount(item, dish, count);
         dish.getItems_dishes().add(itemDishService.findById(itemId, dishId));
@@ -41,11 +42,4 @@ public class DishService {
     public Dish findById(long id) {
         return dishRepository.findById(id).orElse(null);
     }
-
-
-//    @GetMapping("/findByDate")
-//    public List<Dish> findByDate(LocalDate date)
-//    {
-//        return dishRepository.findAllByDate(date);
-//    }
 }
