@@ -31,8 +31,6 @@ public class Menu {
         joinColumns = @JoinColumn(name = "menu_id", referencedColumnName = "id"), 
         inverseJoinColumns = @JoinColumn(name = "dish_id", referencedColumnName = "id")
     )
-    // @ElementCollection(targetClass = Menu.class, fetch = FetchType.EAGER)
-    // @CollectionTable(name = "dishes", joinColumns = @JoinColumn(name = "id"))
     private List<Dish> dishes = new ArrayList<>();
 
     @NotNull

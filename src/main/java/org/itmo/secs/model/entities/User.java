@@ -28,6 +28,6 @@ public class User {
     @Column(unique = true)
     private String name;
 
-    @OneToMany(mappedBy = "users")
+    @OneToMany(mappedBy = "user")
     private List<Menu> menus;
 }
