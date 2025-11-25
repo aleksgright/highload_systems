@@ -15,14 +15,14 @@ public class ItemUpdateDtoToItemConverter implements Converter<ItemUpdateDto, It
 
     @Override
     public Item convert(ItemUpdateDto itemUpdateDto) {
-        Item ret = itemService.findById(itemUpdateDto.getId());
-        if (ret == null) throw new ItemNotFoundException("Item with this id was not found");
-        ret.setId(itemUpdateDto.getId());
-        ret.setName(itemUpdateDto.getName());
-        ret.setCalories(itemUpdateDto.getCalories());
-        ret.setCarbs(itemUpdateDto.getCarbs());
-        ret.setProtein(itemUpdateDto.getProtein());
-        ret.setFats(itemUpdateDto.getFats());
+        Item ret = itemService.findById(itemUpdateDto.id());
+        if (ret == null) throw new ItemNotFoundException("Item with id " + itemUpdateDto.id().toString() + " was not found");
+        ret.setId(itemUpdateDto.id());
+        ret.setName(itemUpdateDto.name());
+        ret.setCalories(itemUpdateDto.calories());
+        ret.setCarbs(itemUpdateDto.carbs());
+        ret.setProtein(itemUpdateDto.protein());
+        ret.setFats(itemUpdateDto.fats());
         return ret;
     }
 }

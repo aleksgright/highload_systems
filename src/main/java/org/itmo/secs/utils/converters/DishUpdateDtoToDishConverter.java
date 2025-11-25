@@ -12,13 +12,12 @@ import org.springframework.stereotype.Component;
 @AllArgsConstructor
 public class DishUpdateDtoToDishConverter implements Converter<DishUpdateNameDto, Dish> {
     private final DishService dishService;
-
     @Override
     public Dish convert(DishUpdateNameDto dishUpdateNameDto) {
-        Dish ret = dishService.findById(dishUpdateNameDto.getId());
+        Dish ret = dishService.findById(dishUpdateNameDto.id());
         if (ret == null)
             throw new ItemNotFoundException("Dish with this id was not found");
-        ret.setName(dishUpdateNameDto.getName());
+        ret.setName(dishUpdateNameDto.name());
         return ret;
     }
 }

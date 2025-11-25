@@ -12,11 +12,11 @@ public class ItemCreateDtoToItemConverter implements Converter<ItemCreateDto, It
     @Override
     public Item convert(ItemCreateDto itemCreateDto) {
         Item ret = new Item();
-        ret.setName(itemCreateDto.getName());
-        ret.setCalories(itemCreateDto.getCalories());
-        ret.setCarbs(itemCreateDto.getCarbs());
-        ret.setProtein(itemCreateDto.getProtein());
-        ret.setFats(itemCreateDto.getFats());
+        ret.setName(itemCreateDto.name());
+        ret.setCalories(itemCreateDto.calories());
+        ret.setCarbs(itemCreateDto.carbs());
+        ret.setProtein(itemCreateDto.protein());
+        ret.setFats(itemCreateDto.fats());
         ret.setCreatorId(1);
         return ret;
     }

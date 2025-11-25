@@ -9,11 +9,10 @@ import org.springframework.stereotype.Component;
 @Component
 @AllArgsConstructor
 public class DishCreateDtoToDishConverter implements Converter<DishCreateDto, Dish> {
-
     @Override
     public Dish convert(DishCreateDto dishCreateDto) {
         Dish dish = new Dish();
-        dish.setName(dishCreateDto.getName());
+        dish.setName(dishCreateDto.name());
         return dish;
     }
 }
