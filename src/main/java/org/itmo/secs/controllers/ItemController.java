@@ -71,7 +71,10 @@ public class ItemController {
         items.forEach((Item it) -> { 
             itemsDto.add(conversionService.convert(it, ItemDto.class));
         });
-        return ResponseEntity.ok(jsonConvService.conv(itemsDto));
+        return ResponseEntity
+            .ok()
+            .header("X-Total-Count: " + String.valueOf(itemService.count()))
+            .body(jsonConvService.conv(itemsDto));
     }
 
     public ResponseEntity<String> findById(Long id) {

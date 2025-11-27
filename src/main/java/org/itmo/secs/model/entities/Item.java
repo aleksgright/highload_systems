@@ -27,6 +27,7 @@ public class Item {
     private Integer calories;
 
     @NotNull
+    @Column(unique = true)
     private String name;
 
     @NotNull
