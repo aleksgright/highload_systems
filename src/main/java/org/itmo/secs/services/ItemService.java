@@ -19,12 +19,12 @@ public class ItemService {
     private final ItemRepository itemRepository;
 
     @Transactional(isolation=Isolation.SERIALIZABLE)
-    public void save(Item item) {
+    public Item save(Item item) {
         if (findByName(item.getName()) != null) {
             throw new DataIntegrityViolationException("Item with name " + item.getName() + " already exist");
         }
         
-        itemRepository.save(item);
+        return itemRepository.save(item);
     }
     
     public void update(Item item) {
