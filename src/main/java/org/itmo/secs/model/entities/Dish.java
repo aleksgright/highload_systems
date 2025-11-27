@@ -21,6 +21,7 @@ public class Dish {
     private Long id;
 
     @NotNull
+    @Column(unique = true)
     private String name;
 
     @OneToMany(mappedBy = "dish")
