@@ -1,7 +1,7 @@
 package org.itmo.secs.utils.advices;
 
 import org.itmo.secs.model.dto.ErrorDto;
-import org.itmo.secs.utils.exceptions.ItemNotFoundException;
+import org.itmo.secs.utils.exceptions.*;
 import org.springframework.core.convert.ConversionFailedException;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -15,6 +15,13 @@ public class ExceptionTranslator {
     @ResponseStatus(HttpStatus.NOT_FOUND)
     @ResponseBody
     public ErrorDto processItemNotFoundException(ItemNotFoundException ex) {
+        return new ErrorDto(ex.getMessage());
+    }
+
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    @ResponseBody
+    public ErrorDto processItemNotFoundException(DataIntegrityViolationException ex) {
         return new ErrorDto(ex.getMessage());
     }
 }
