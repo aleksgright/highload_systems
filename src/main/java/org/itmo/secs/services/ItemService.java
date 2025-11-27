@@ -31,8 +31,8 @@ public class ItemService {
         return itemRepository.findByName(name).orElse(null);
     }
 
-    public List<Item> findAll(int page) {
-        Pageable pageable = PageRequest.of(page, 2);
+    public List<Item> findAll(int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
         return itemRepository.findAll(pageable).toList();
     }
 }

@@ -1,5 +1,6 @@
 package org.itmo.secs.services;
 
+import org.itmo.secs.model.entities.Menu;
 import org.itmo.secs.repositories.MenuRepository;
 
 import lombok.AllArgsConstructor;

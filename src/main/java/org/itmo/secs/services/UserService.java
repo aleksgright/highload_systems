@@ -1,7 +1,7 @@
 package org.itmo.secs.services;
 
 import org.itmo.secs.repositories.UserRepository;
-
+import org.itmo.secs.model.entities.User;
 import lombok.AllArgsConstructor;
 
 import org.springframework.stereotype.Service;
