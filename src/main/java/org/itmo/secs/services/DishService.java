@@ -3,7 +3,6 @@ package org.itmo.secs.services;
 import lombok.AllArgsConstructor;
 import org.itmo.secs.model.entities.Dish;
 import org.itmo.secs.model.entities.Item;
-import org.itmo.secs.model.entities.ItemDish;
 import org.itmo.secs.repositories.DishRepository;
 import org.itmo.secs.utils.exceptions.ItemNotFoundException;
 import org.springframework.stereotype.Service;
@@ -15,9 +14,9 @@ public class DishService {
     private final DishRepository dishRepository;
     private final ItemService itemService;
 
-    public void create(Dish dish)
+    public Dish create(Dish dish)
     {
-        dishRepository.save(dish);
+        return dishRepository.save(dish);
     }
 
     public void addItem(long itemId, long dishId, int count) {

@@ -28,9 +28,10 @@ public class ItemController {
     private final PagingConf pagingConf;
 
     @PostMapping
-    public ResponseEntity<Void> create(@RequestBody ItemCreateDto itemCreateDto) {
-        itemService.save(conversionService.convert(itemCreateDto, Item.class));
-        return ResponseEntity.status(HttpStatus.CREATED).build();
+    public ResponseEntity<Item> create(@RequestBody ItemCreateDto itemCreateDto) {
+        return new ResponseEntity<>(
+                itemService.save(conversionService.convert(itemCreateDto, Item.class)),
+                HttpStatus.CREATED);
     }
 
     @PutMapping
