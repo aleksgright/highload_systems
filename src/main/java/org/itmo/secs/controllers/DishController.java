@@ -2,10 +2,7 @@ package org.itmo.secs.controllers;
 
 import lombok.AllArgsConstructor;
 
-import org.itmo.secs.model.dto.DishAddItemDto;
-import org.itmo.secs.model.dto.DishCreateDto;
-import org.itmo.secs.model.dto.DishResponseDto;
-import org.itmo.secs.model.dto.DishUpdateNameDto;
+import org.itmo.secs.model.dto.*;
 import org.itmo.secs.model.entities.Dish;
 import org.itmo.secs.services.DishService;
 import org.itmo.secs.services.JsonConvService;
@@ -26,12 +23,12 @@ public class DishController {
     private final PagingConf pagingConf;
 
     @PostMapping
-    public ResponseEntity<DishResponseDto> create(@RequestBody DishCreateDto dishCreateDto) {
+    public ResponseEntity<DishDto> create(@RequestBody DishCreateDto dishCreateDto) {
         try {
             return new ResponseEntity<>(
                     conversionService.convert(
                             dishService.create(conversionService.convert(dishCreateDto, Dish.class)),
-                            DishResponseDto.class),
+                            DishDto.class),
                     HttpStatus.CREATED);
         } catch (ConversionException e) {
             return ResponseEntity.status(500).build();
