@@ -4,6 +4,7 @@ import lombok.AllArgsConstructor;
 
 import org.itmo.secs.model.dto.DishAddItemDto;
 import org.itmo.secs.model.dto.DishCreateDto;
+import org.itmo.secs.model.dto.DishResponseDto;
 import org.itmo.secs.model.dto.DishUpdateNameDto;
 import org.itmo.secs.model.entities.Dish;
 import org.itmo.secs.services.DishService;
@@ -25,10 +26,12 @@ public class DishController {
     private final PagingConf pagingConf;
 
     @PostMapping
-    public ResponseEntity<Dish> create(@RequestBody DishCreateDto dishCreateDto) {
+    public ResponseEntity<DishResponseDto> create(@RequestBody DishCreateDto dishCreateDto) {
         try {
             return new ResponseEntity<>(
-                    dishService.create(conversionService.convert(dishCreateDto, Dish.class)),
+                    conversionService.convert(
+                            dishService.create(conversionService.convert(dishCreateDto, Dish.class)),
+                            DishResponseDto.class),
                     HttpStatus.CREATED);
         } catch (ConversionException e) {
             return ResponseEntity.status(500).build();
@@ -92,10 +95,4 @@ public class DishController {
         dishService.addItem(dishAddItemDto.itemId(), dishAddItemDto.dishId(), dishAddItemDto.count());
         return ResponseEntity.ok().build();
     }
-
-    // @GetMapping("/findByDate")
-    // public List<Dish> findByDate(Integer year, Integer month, Integer day)
-    // {
-    // return dishService.findByDate(LocalDate.of(year, month, day));
-    // }
 }
