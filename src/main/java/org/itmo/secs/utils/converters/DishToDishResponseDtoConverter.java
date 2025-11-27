@@ -1,6 +1,5 @@
 package org.itmo.secs.utils.converters;
 
-import org.itmo.secs.model.dto.DishCreateDto;
 import org.itmo.secs.model.dto.DishResponseDto;
 import org.itmo.secs.model.entities.Dish;
 import org.springframework.core.convert.converter.Converter;

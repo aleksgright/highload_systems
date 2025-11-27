@@ -2,6 +2,7 @@ package org.itmo.secs.controllers;
 
 import lombok.AllArgsConstructor;
 
+import org.itmo.secs.model.dto.ItemResponseDto;
 import org.itmo.secs.model.dto.ItemUpdateDto;
 import org.itmo.secs.model.entities.Item;
 import org.itmo.secs.model.dto.ItemCreateDto;
@@ -28,9 +29,11 @@ public class ItemController {
     private final PagingConf pagingConf;
 
     @PostMapping
-    public ResponseEntity<Item> create(@RequestBody ItemCreateDto itemCreateDto) {
+    public ResponseEntity<ItemResponseDto> create(@RequestBody ItemCreateDto itemCreateDto) {
         return new ResponseEntity<>(
-                itemService.save(conversionService.convert(itemCreateDto, Item.class)),
+                conversionService.convert(
+                        itemService.save(conversionService.convert(itemCreateDto, Item.class)),
+                        ItemResponseDto.class),
                 HttpStatus.CREATED);
     }
 
