@@ -3,10 +3,12 @@ package org.itmo.secs.controllers;
 import lombok.AllArgsConstructor;
 
 import org.itmo.secs.model.dto.ItemUpdateDto;
+import org.itmo.secs.model.entities.Dish;
 import org.itmo.secs.model.entities.Item;
 import org.itmo.secs.model.dto.ItemCreateDto;
 import org.itmo.secs.services.ItemService;
 import org.itmo.secs.services.JsonConvService;
+import org.springframework.core.convert.ConversionException;
 import org.springframework.core.convert.ConversionService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -38,7 +40,11 @@ public class ItemController {
 
     @PutMapping
     public ResponseEntity<Void> update(@RequestBody ItemUpdateDto itemUpdateDto) {
-        itemService.update(conversionService.convert(itemUpdateDto, Item.class));
+        try {
+            itemService.update(conversionService.convert(itemUpdateDto, Item.class));
+        } catch (ConversionException e) {
+            return ResponseEntity.status(500).build();
+        }
         return ResponseEntity.ok().build();
     }
 

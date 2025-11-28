@@ -1,10 +1,14 @@
 package org.itmo.secs.integration;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.google.gson.Gson;
+import org.itmo.secs.model.dto.DishCreateDto;
+import org.itmo.secs.model.dto.DishUpdateNameDto;
 import org.itmo.secs.model.entities.Item;
 import org.itmo.secs.repositories.*;
 import org.junit.jupiter.api.BeforeEach;
@@ -52,12 +56,44 @@ public class DishControllerTest {
         RestAssured.baseURI = "http://localhost:" + port;
 
         List<Item> items = List.of(
-                new Item(1L, 300, "Milk1", 20, 10, 50, 0L),
-                new Item(2L, 300, "Milk2", 20, 10, 50, 0L),
-                new Item(3L, 300, "Milk3", 20, 10, 50, 0L),
-                new Item(4L, 300, "Milk4", 20, 10, 50, 0L),
-                new Item(5L, 300, "Milk5", 20, 10, 50, 0L));
+                new Item(1L, 300, "Milk1", 20, 10, 50, 0L, new ArrayList<>()),
+                new Item(2L, 300, "Milk2", 20, 10, 50, 0L, new ArrayList<>()),
+                new Item(3L, 300, "Milk3", 20, 10, 50, 0L, new ArrayList<>()),
+                new Item(4L, 300, "Milk4", 20, 10, 50, 0L, new ArrayList<>()),
+                new Item(5L, 300, "Milk5", 20, 10, 50, 0L, new ArrayList<>()));
 
         List<Item> savedItems = itemRepository.saveAll(items);
+    }
+
+    @Test
+    void testCreateNewDish() {
+        Gson gson = new Gson();
+
+        DishCreateDto requestBodyDto = new DishCreateDto("Someone");
+
+        String requestBody = gson.toJson(requestBodyDto);
+        RestAssured.given()
+                .contentType("application/json")
+                .body(requestBody)
+                .post("/dish")
+                .then()
+                .statusCode(201);
+
+        assertTrue(dishRepository.findById(1L).isPresent());
+    }
+
+    @Test
+    void testUpdatingNonExistingDish() {
+        Gson gson = new Gson();
+
+        DishUpdateNameDto requestBodyDto = new DishUpdateNameDto(100000L, "Someone");
+
+        String requestBody = gson.toJson(requestBodyDto);
+        RestAssured.given()
+                .contentType("application/json")
+                .body(requestBody)
+                .put("/dish")
+                .then()
+                .statusCode(500);
     }
 }
