@@ -42,6 +42,12 @@ public class ItemController {
         return ResponseEntity.ok().build();
     }
 
+    @DeleteMapping
+    public ResponseEntity<Void> delete(@RequestParam(name="id", required=true) Long itemId) {
+        itemService.delete(itemId);
+        return ResponseEntity.ok().build();
+    }
+
     @GetMapping
     public ResponseEntity<String> find(
         @RequestParam(required=false) Long id,
@@ -73,7 +79,7 @@ public class ItemController {
         });
         return ResponseEntity
             .ok()
-            .header("X-Total-Count: " + String.valueOf(itemService.count()))
+            .header("X-Total-Count", String.valueOf(itemService.count()))
             .body(jsonConvService.conv(itemsDto));
     }
 

@@ -52,4 +52,12 @@ public class ItemService {
     public long count() {
         return itemRepository.count();
     }
+
+    @Transactional(isolation=Isolation.SERIALIZABLE)
+    public void delete(Long id) {
+        if (itemRepository.findById(id).isEmpty()) {
+            throw new ItemNotFoundException("Item with id " + id.toString() + " was not found");
+        }
+        itemRepository.deleteById(id);
+    }
 }
