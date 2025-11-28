@@ -13,8 +13,7 @@ public class DishToDishDtoConverter implements Converter<Dish, DishDto> {
     public DishDto convert(Dish dish) {
         return new DishDto(
             dish.getId(),
-            dish.getName(),
-            new ArrayList<>()
+            dish.getName()
         );
     }
 }

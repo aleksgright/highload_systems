@@ -10,6 +10,7 @@ import org.itmo.secs.repositories.ItemDishRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.Optional;
+import java.util.List;
 
 @Service
 @AllArgsConstructor
@@ -28,7 +29,7 @@ public class ItemDishService {
             persistUnit.setCount(count);
         } else {
             persistUnit = itemDishOpt.get();
-            persistUnit.setCount(persistUnit.getCount() + count);
+            persistUnit.setCount(count);
         }
         itemDishRepository.save(persistUnit);
 
@@ -38,5 +39,7 @@ public class ItemDishService {
         return itemDishRepository.findById_ItemIdAndId_DishId(itemId, dishId).orElse(null);
     }
 
-
+    public List<ItemDish> findAllByDishId(long dishId) {
+        return itemDishRepository.findAllById_DishId(dishId);
+    }
 }

@@ -5,6 +5,5 @@ import org.springframework.data.util.Pair;
 
 public record DishDto(
     Long id,
-    String name,
-    List<Pair<ItemDto, Integer>> counts
+    String name
 ) { }
