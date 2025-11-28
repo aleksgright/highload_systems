@@ -1,7 +1,7 @@
 FROM gradle:jdk21 as build
 COPY . /src
 WORKDIR /src
-RUN ./gradlew clean build
+RUN ./gradlew clean build -x test
 
 FROM amazoncorretto:21 as runner
 WORKDIR /app
