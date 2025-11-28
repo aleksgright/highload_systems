@@ -6,7 +6,7 @@ import java.util.List;
 
 import org.itmo.secs.model.entities.Item;
 import org.itmo.secs.repositories.ItemRepository;
-import org.itmo.secs.utils.exceptions.DataIntegrityViolationException;
+import org.itmo.secs.utils.exceptions.*;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -27,7 +27,12 @@ public class ItemService {
         return itemRepository.save(item);
     }
     
+    @Transactional(isolation=Isolation.SERIALIZABLE)
     public void update(Item item) {
+        if (findById(item.getId()) == null) {
+            throw new ItemNotFoundException("Item with id " + item.getId() + " was not found");
+        }
+        
         itemRepository.save(item);
     }
 
