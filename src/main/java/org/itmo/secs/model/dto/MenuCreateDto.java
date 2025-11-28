@@ -1,6 +1,8 @@
 package org.itmo.secs.model.dto;
 
+import jakarta.annotation.Nullable;
+
 public record MenuCreateDto(
     String meal,
-    Long userId
+    @Nullable Long userId
 ) { }

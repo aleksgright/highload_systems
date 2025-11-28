@@ -7,8 +7,10 @@ import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface MenuRepository extends JpaRepository<Menu, Long> {
+    Optional<Menu> findByMealAndDateAndUserId(String meal, LocalDate date, long user_id);
     List<Menu> findAllByDate(LocalDate date);
 }

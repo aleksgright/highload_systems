@@ -21,11 +21,12 @@ public class UserService {
     }
 
     public void update(User user) {
-        if (findById(user.getId()) == null) {
+        User old = findById(user.getId());
+        if (old == null) {
             throw new ItemNotFoundException("User with id " + user.getId() + " was not found");
         }
-
-        userRep.save(user);
+        old.setName(user.getName());
+        userRep.save(old);
     }
 
     public User findByName(String name) {
