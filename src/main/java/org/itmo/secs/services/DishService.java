@@ -33,18 +33,30 @@ public class DishService {
         return dishRepository.save(dish);
     }
 
-    public void addItem(long itemId, long dishId, int count) {
+    @Transactional(isolation=Isolation.SERIALIZABLE)
+    public void addItem(Long itemId, Long dishId, int count) {
         Dish dish = findById(dishId);
         Item item = itemService.findById(itemId);
         if (dish == null) {
-            throw new RuntimeException();
+            throw new ItemNotFoundException("Dish with id " + dishId + " was not found");
         }
         if (item == null) {
-            throw new ItemNotFoundException("Item " + itemId + " was not found");
+            throw new ItemNotFoundException("Item with id " + itemId + " was not found");
         }
         itemDishService.updateItemDishCount(item, dish, count);
-        dish.getItems_dishes().add(itemDishService.findById(itemId, dishId));
-        item.getItems_dishes().add(itemDishService.findById(itemId, dishId));
+    }
+
+    @Transactional(isolation=Isolation.SERIALIZABLE)
+    public void deleteItem(Long itemId, Long dishId) {
+        Dish dish = findById(dishId);
+        Item item = itemService.findById(itemId);
+        if (dish == null) {
+            throw new ItemNotFoundException("Dish with id " + itemId + " was not found");
+        }
+        if (item == null) {
+            throw new ItemNotFoundException("Item with id " + itemId + " was not found");
+        }
+        itemDishService.delete(item, dish);
     }
 
     @Transactional(isolation=Isolation.SERIALIZABLE)
@@ -56,7 +68,7 @@ public class DishService {
         dishRepository.save(dish);
     }
 
-    public Dish findById(long id) {
+    public Dish findById(Long id) {
         return dishRepository.findById(id).orElse(null);
     }
 
