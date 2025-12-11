@@ -9,6 +9,9 @@ import lombok.Setter;
 
 import java.util.List;
 
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
+
 @Entity
 @Table(name = "users")
 @Getter
@@ -24,6 +27,13 @@ public class User {
     @Column(unique = true)
     private String name;
 
-    @OneToMany(mappedBy = "user", cascade = CascadeType.REMOVE)
+    @OneToMany(mappedBy = "user")
     private List<Menu> menus;
+
+    @PreRemove
+    public void setNullInMenus() {
+        for (var menu : menus) {
+            menu.setUser(null);
+        }
+    }
 }
