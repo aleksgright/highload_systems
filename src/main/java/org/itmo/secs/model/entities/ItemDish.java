@@ -20,7 +20,7 @@ import lombok.Setter;
 @NoArgsConstructor
 public class ItemDish {
     @EmbeddedId
-    private ItemDishId id;
+    private ItemDishId id = new ItemDishId();
 
     @ManyToOne
     @JsonIgnore

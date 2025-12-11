@@ -24,7 +24,7 @@ public class Menu {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToMany
+    @ManyToMany(cascade = CascadeType.PERSIST)
     @NotNull
     @JoinTable(
         name = "menu_dishes", 
@@ -43,9 +43,4 @@ public class Menu {
     @NotNull
     @Enumerated(EnumType.STRING)
     private Meal meal;
-
-    @PrePersist
-    private void beforeSaving() {
-        date = LocalDate.now(ZoneId.of("Europe/Moscow"));
-    }
 }

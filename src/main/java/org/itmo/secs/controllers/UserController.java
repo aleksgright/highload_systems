@@ -4,6 +4,7 @@ import org.itmo.secs.model.dto.*;
 import org.itmo.secs.model.entities.Item;
 import org.itmo.secs.model.entities.User;
 import org.itmo.secs.services.UserService;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -11,6 +12,12 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
+
 import org.springframework.core.convert.ConversionService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -20,10 +27,16 @@ import lombok.AllArgsConstructor;
 @AllArgsConstructor
 @RestController
 @RequestMapping(value = "user")
+@Tag(name = "Users API")
 public class UserController {
     private ConversionService conversionService;
     private UserService userService;
 
+    @Operation(summary = "Create new user", description = "Create user by given name")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "201", description = "Successfully created"), 
+            @ApiResponse(responseCode = "400", description = "User with the same name already exists")
+        })
     @PostMapping
     public ResponseEntity<UserDto> create(@RequestBody UserCreateDto userDto) {
         User user = new User();
@@ -39,6 +52,12 @@ public class UserController {
     public ResponseEntity<Void> update(@RequestBody UserDto userDto) {
         userService.update(new User(userDto.id(), userDto.name(), null));
         return ResponseEntity.ok().build();
+    }
+
+    @DeleteMapping
+    public ResponseEntity<Void> delete(@RequestParam(required=true) long id) {
+        userService.deleteById(id);
+        return ResponseEntity.noContent().build();
     }
 
     @GetMapping

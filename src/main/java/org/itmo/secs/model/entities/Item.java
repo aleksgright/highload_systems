@@ -44,7 +44,7 @@ public class Item {
 
     private long creatorId;
 
-    @OneToMany(mappedBy = "item")
+    @OneToMany(mappedBy = "item", cascade = CascadeType.REMOVE, orphanRemoval = true)
     @NotNull
     private List<ItemDish> items_dishes = new ArrayList<>();
 }

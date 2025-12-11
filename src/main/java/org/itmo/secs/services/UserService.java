@@ -2,11 +2,12 @@ package org.itmo.secs.services;
 
 import org.itmo.secs.utils.exceptions.*;
 import org.itmo.secs.repositories.UserRepository;
-import org.itmo.secs.utils.exceptions.ItemNotFoundException;
 import org.itmo.secs.model.entities.User;
 import lombok.AllArgsConstructor;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Isolation;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @AllArgsConstructor
@@ -20,6 +21,7 @@ public class UserService {
         return userRep.save(user);
     }
 
+    @Transactional(isolation=Isolation.SERIALIZABLE)
     public void update(User user) {
         User old = findById(user.getId());
         if (old == null) {
@@ -27,6 +29,16 @@ public class UserService {
         }
         old.setName(user.getName());
         userRep.save(old);
+    }
+
+    @Transactional(isolation=Isolation.SERIALIZABLE)
+    public void deleteById(Long id) {
+        User user = findById(id);
+        if (user == null) {
+            throw new ItemNotFoundException("User with id " + id.toString() + " was not found");
+        }
+
+        userRep.deleteById(id);
     }
 
     public User findByName(String name) {

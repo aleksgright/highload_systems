@@ -9,8 +9,7 @@ import java.util.ArrayList;
 import org.itmo.secs.model.dto.*;
 import org.itmo.secs.model.entities.Dish;
 import org.itmo.secs.model.entities.Item;
-import org.itmo.secs.services.DishService;
-import org.itmo.secs.services.JsonConvService;
+import org.itmo.secs.services.*;
 import org.itmo.secs.utils.conf.PagingConf;
 import org.springframework.core.convert.ConversionException;
 import org.springframework.core.convert.ConversionService;
@@ -24,6 +23,7 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping(value = "dish")
 public class DishController {
     private final DishService dishService;
+    private final ItemDishService itemDishService;
     private final ConversionService conversionService;
     private final JsonConvService jsonConvService;
     private final PagingConf pagingConf;
@@ -102,25 +102,34 @@ public class DishController {
             }
         );
 
-        return ResponseEntity.ok(jsonConvService.conv(dishesDto));
+        return ResponseEntity.ok().header("Content-Type", "application/json").body(jsonConvService.conv(dishesDto));
     }
 
     @PutMapping("/items")
     public ResponseEntity<Void> addItem(@RequestBody DishAddItemDto dishAddItemDto) {
         dishService.addItem(dishAddItemDto.itemId(), dishAddItemDto.dishId(), dishAddItemDto.count());
-        return ResponseEntity.ok().build();
+        return ResponseEntity.noContent().build();
+    }
+
+    @DeleteMapping("/items")
+    public ResponseEntity<Void> delete(
+        @RequestParam(name="item-id", required=true) Long itemId,
+        @RequestParam(name="dish-id", required=true) Long dishId
+    ) {
+        dishService.deleteItem(itemId, dishId);
+        return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/items")
     public ResponseEntity<String> getItems(@RequestParam(required=true) long id) {
         List<Pair<Item, Integer>> items = dishService.makeListOfItems(id);
 
-        List<Pair<ItemDto, Integer>> itemsDto = new ArrayList<>();
+        List<ItemCountDto> itemsDto = new ArrayList<>();
 
         items.forEach((Pair<Item, Integer> it) -> {
-            itemsDto.add(Pair.of(conversionService.convert(it.getFirst(), ItemDto.class), it.getSecond()));
+            itemsDto.add(new ItemCountDto(conversionService.convert(it.getFirst(), ItemDto.class), it.getSecond()));
         });
 
-        return ResponseEntity.ok(jsonConvService.conv(itemsDto));
+        return ResponseEntity.ok().header("Content-Type", "application/json").body(jsonConvService.conv(itemsDto));
     }
 }
