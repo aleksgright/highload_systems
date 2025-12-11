@@ -24,11 +24,11 @@ public class Dish {
     @Column(unique = true)
     private String name;
 
-    @OneToMany(mappedBy = "dish")
+    @OneToMany(mappedBy = "dish", cascade = CascadeType.REMOVE, orphanRemoval = true)
     @NotNull
     private List<ItemDish> items_dishes = new ArrayList<>();
 
-    @ManyToMany(mappedBy = "dishes")
+    @ManyToMany(mappedBy = "dishes", cascade = CascadeType.REMOVE)
     @NotNull
     private List<Menu> menus = new ArrayList<>();
 }
