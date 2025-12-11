@@ -3,9 +3,7 @@ package org.itmo.secs.model.entities;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -14,6 +12,7 @@ import java.util.List;
 @Table(name = "dishes")
 @Getter
 @Setter
+@AllArgsConstructor
 @NoArgsConstructor
 public class Dish {
     @Id
@@ -31,4 +30,10 @@ public class Dish {
     @ManyToMany(mappedBy = "dishes")
     @NotNull
     private List<Menu> menus = new ArrayList<>();
+
+    public Dish (String name, List<ItemDish> items_dishes, List<Menu> menus) {
+        this.name = name;
+        this.items_dishes = items_dishes;
+        this.menus = menus;
+    }
 }

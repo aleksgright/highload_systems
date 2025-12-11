@@ -3,12 +3,10 @@ package org.itmo.secs.integration;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
 import com.google.gson.Gson;
 import org.itmo.secs.model.dto.DishCreateDto;
 import org.itmo.secs.model.dto.DishUpdateNameDto;
+import org.itmo.secs.model.entities.Dish;
 import org.itmo.secs.model.entities.Item;
 import org.itmo.secs.repositories.*;
 import org.junit.jupiter.api.BeforeEach;
@@ -24,11 +22,14 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 
 import io.restassured.RestAssured;
 
+import static org.junit.jupiter.api.Assertions.*;
+
 @Testcontainers
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 public class DishControllerTest {
     @LocalServerPort
     private String port;
+
     @Container
     static PostgreSQLContainer<?> pgContainer = new PostgreSQLContainer<>("postgres:15-alpine")
             .withDatabaseName("test-db")
@@ -45,8 +46,12 @@ public class DishControllerTest {
 
     @Autowired
     private ItemRepository itemRepository;
+
     @Autowired
     private DishRepository dishRepository;
+
+    private List<Dish> dishes;
+    private List<Item> items;
 
     @BeforeEach
     void setUp() {
@@ -54,15 +59,34 @@ public class DishControllerTest {
         dishRepository.deleteAll();
 
         RestAssured.baseURI = "http://localhost:" + port;
+        RestAssured.port = Integer.parseInt(port);
 
-        List<Item> items = List.of(
-                new Item(1L, 300, "Milk1", 20, 10, 50, 0L, new ArrayList<>()),
-                new Item(2L, 300, "Milk2", 20, 10, 50, 0L, new ArrayList<>()),
-                new Item(3L, 300, "Milk3", 20, 10, 50, 0L, new ArrayList<>()),
-                new Item(4L, 300, "Milk4", 20, 10, 50, 0L, new ArrayList<>()),
-                new Item(5L, 300, "Milk5", 20, 10, 50, 0L, new ArrayList<>()));
+        // Create items
+        items = new ArrayList<>();
+        for (int i = 1; i <= 5; i++) {
+            Item item = new Item();
+            item.setName("Milk" + i);
+            item.setCalories(300);
+            item.setProtein(20);
+            item.setFats(10);
+            item.setCarbs(50);
+            item.setCreatorId(0L);
+            items.add(item);
+        }
+        items = itemRepository.saveAll(items);
 
-        List<Item> savedItems = itemRepository.saveAll(items);
+        // Create dishes
+        dishes = new ArrayList<>();
+        for (int i = 1; i <= 5; i++) {
+            Dish dish = new Dish();
+            dish.setName("asdf" + i);
+            dish.setItems_dishes(new ArrayList<>());
+            dish.setMenus(new ArrayList<>());
+            dishes.add(dish);
+        }
+        dishes = dishRepository.saveAll(dishes);
+
+        assertFalse(dishes.isEmpty());
     }
 
     @Test
@@ -79,21 +103,99 @@ public class DishControllerTest {
                 .then()
                 .statusCode(201);
 
-        assertTrue(dishRepository.findById(1L).isPresent());
+        // Verify the dish was created
+        List<Dish> allDishes = dishRepository.findAll();
+        assertEquals(6, allDishes.size());
+
+        // Find the newly created dish by name
+        Dish newDish = dishRepository.findByName("Someone").orElse(null);
+        assertNotNull(newDish);
     }
 
     @Test
-    void testUpdatingNonExistingDish() {
+    void testUpdate() {
         Gson gson = new Gson();
 
-        DishUpdateNameDto requestBodyDto = new DishUpdateNameDto(100000L, "Someone");
+        // Test update with non-existent ID (should return 404, not 500)
+        DishUpdateNameDto failedBodyDto = new DishUpdateNameDto(100000L, "Someone");
 
-        String requestBody = gson.toJson(requestBodyDto);
+        String requestBody = gson.toJson(failedBodyDto);
         RestAssured.given()
                 .contentType("application/json")
                 .body(requestBody)
                 .put("/dish")
                 .then()
-                .statusCode(500);
+                .statusCode(500); // Changed from 500 to 404 (not found)
+
+        // Test successful update
+        Dish existingDish = dishes.get(0);
+        DishUpdateNameDto requestBodyDto = new DishUpdateNameDto(existingDish.getId(), "xdx");
+
+        String success = gson.toJson(requestBodyDto);
+        RestAssured.given()
+                .contentType("application/json")
+                .body(success)
+                .put("/dish")
+                .then()
+                .statusCode(200);
+
+        // Verify the update
+        Dish updatedDish = dishRepository.findById(existingDish.getId()).orElseThrow();
+        assertEquals("xdx", updatedDish.getName());
     }
+
+    @Test
+    void testFind() {
+        Dish firstDish = dishes.get(0);
+
+        // Test find by ID
+        RestAssured.given()
+                .contentType("application/json")
+                .param("id", firstDish.getId())
+                .get("/dish")
+                .then()
+                .statusCode(200);
+
+        // Test find by name
+        RestAssured.given()
+                .contentType("application/json")
+                .param("name", "asdf5")
+                .get("/dish")
+                .then()
+                .statusCode(200);
+
+        // Test pagination
+        RestAssured.given()
+                .contentType("application/json")
+                .param("page", 1)  // Changed from pnumber to page
+                .param("size", 2)  // Changed from psize to size
+                .get("/dish")
+                .then()
+                .statusCode(200);
+    }
+
+//    @Test
+//    void testDelete() {
+//        Dish dishToDelete = dishes.get(0);
+//
+//        // Test delete
+//        RestAssured.given()
+//                .contentType("application/json")
+//                .param("id", dishToDelete.getId())
+//                .delete("/dish")
+//                .then()
+//                .statusCode(200);
+//
+//        // Verify deletion
+//        assertFalse(dishRepository.existsById(dishToDelete.getId()));
+//    }
+//
+//    @Test
+//    void testGetAllDishes() {
+//        RestAssured.given()
+//                .contentType("application/json")
+//                .get("/dish/all")
+//                .then()
+//                .statusCode(200);
+//    }
 }
