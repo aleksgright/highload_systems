@@ -1,7 +1,6 @@
 package org.itmo.secs.utils.converters;
 
 import lombok.AllArgsConstructor;
-
 import org.itmo.secs.model.dto.*;
 import org.itmo.secs.model.entities.*;
 import org.itmo.secs.model.entities.enums.Meal;
@@ -15,12 +14,13 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Component
 @AllArgsConstructor
-public class MenuCreateDtoToMenuConvertor implements Converter<MenuCreateDto, Menu> {
+public class MenuDtoToMenuConvertor implements Converter<MenuDto, Menu> {
     private final UserService userService;
     @Transactional(isolation=Isolation.SERIALIZABLE)
     @Override
-    public Menu convert(MenuCreateDto menuDto) {
+    public Menu convert(MenuDto menuDto) {
         Menu menu = new Menu();
+
         User user = null;
         if (menuDto.userId() != null) {
             user = userService.findById(menuDto.userId());
@@ -29,6 +29,7 @@ public class MenuCreateDtoToMenuConvertor implements Converter<MenuCreateDto, Me
             }
         }
 
+        menu.setId(menuDto.id());
         menu.setUser(user);
         menu.setDate(menuDto.date());
         try {
