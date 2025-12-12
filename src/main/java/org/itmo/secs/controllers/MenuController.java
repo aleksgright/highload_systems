@@ -94,7 +94,7 @@ public class MenuController {
         })
     @DeleteMapping
     public ResponseEntity<Void> delete(
-        @Parameter(name="ID", description = "ID удаляемого меню", example = "1", required = true)
+        @Parameter(description = "ID удаляемого меню", example = "1", required = true)
         @RequestParam(name="id", required=true) Long menuId
     ) {
         menuService.delete(menuId);
@@ -119,11 +119,11 @@ public class MenuController {
         })
     @GetMapping
     public ResponseEntity<String> find(
-        @Parameter(name="ID", description = "ID продукта", example = "1", required = false)
+        @Parameter(description = "ID продукта", example = "1", required = false)
         @RequestParam(required=false) Long id,
-        @Parameter(name="Номер страницы", description = "Номер страницы (нумерация с 0)", example = "0", required = false)
+        @Parameter(description = "Номер страницы (нумерация с 0)", example = "0", required = false)
         @RequestParam(name="pnumber", required=false) Integer _pageNumber,
-        @Parameter(name="Размер страницы", description = "Размер страницы (по умолчанию 50)", example = "10", required = false)
+        @Parameter(description = "Размер страницы (по умолчанию 50)", example = "10", required = false)
         @RequestParam(name="psize", required=false) Integer _pageSize
     ) {
         if (id != null) {
@@ -197,7 +197,7 @@ public class MenuController {
         })
     @GetMapping("/dishes")
     public ResponseEntity<String> getDishes(
-        @Parameter(name="ID", description = "ID меню", example = "1", required = true)
+        @Parameter(description = "ID меню", example = "1", required = true)
         @RequestParam(required=true) Long id
     ) {
         List<Dish> dishes = menuService.makeListOfDishes(id);
