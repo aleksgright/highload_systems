@@ -2,10 +2,9 @@ package org.itmo.secs.controllers;
 
 import lombok.AllArgsConstructor;
 
-import org.itmo.secs.model.dto.ItemUpdateDto;
+import org.itmo.secs.model.dto.*;
 import org.itmo.secs.model.entities.Dish;
 import org.itmo.secs.model.entities.Item;
-import org.itmo.secs.model.dto.ItemCreateDto;
 import org.itmo.secs.services.ItemService;
 import org.itmo.secs.services.JsonConvService;
 import org.springframework.core.convert.ConversionException;
@@ -13,6 +12,12 @@ import org.springframework.core.convert.ConversionService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import io.swagger.v3.oas.annotations.*;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.media.*;
 
 import java.util.List;
 import java.util.ArrayList;
@@ -23,12 +28,26 @@ import org.itmo.secs.utils.conf.PagingConf;
 @AllArgsConstructor
 @RestController
 @RequestMapping(value = "item")
+@Tag(name = "Продукты (Items API)")
 public class ItemController {
     private final ConversionService conversionService;
     private final ItemService itemService;
     private final JsonConvService jsonConvService;
     private final PagingConf pagingConf;
 
+    @Operation(summary = "Создать новый продукт", description = "Создается новый пользователь по отправленному ItemCreateDTO")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "201", description = "Продукт был успешно создан",
+                content = {
+                    @Content(mediaType = "application/json", schema = @Schema(implementation = ItemDto.class))
+                }
+            ), 
+            @ApiResponse(responseCode = "400", description = "Продукт с таким же именем уже есть базе",
+                content = {
+                    @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorDto.class))
+                }
+            )
+        })
     @PostMapping
     public ResponseEntity<ItemDto> create(@RequestBody ItemCreateDto itemCreateDto) {
         return new ResponseEntity<>(
@@ -38,6 +57,20 @@ public class ItemController {
                 HttpStatus.CREATED);
     }
 
+    @Operation(summary = "Изменить продукт", description = "Изменяет продукт из БД по отправленному DTO")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "204", description = "Успешно изменен"), 
+            @ApiResponse(responseCode = "400", description = "Продукт с именем из DTO уже существует",
+                content = {
+                    @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorDto.class))
+                }
+            ),
+            @ApiResponse(responseCode = "404", description = "Продукт с id из DTO не был найден",
+                content = {
+                    @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorDto.class))
+                }
+            )
+        })
     @PutMapping
     public ResponseEntity<Void> update(@RequestBody ItemUpdateDto itemUpdateDto) {
         try {
@@ -45,25 +78,57 @@ public class ItemController {
         } catch (ConversionException e) {
             return ResponseEntity.status(500).build();
         }
-        return ResponseEntity.ok().build();
+        return ResponseEntity.noContent().build();
     }
 
+    @Operation(summary = "Удалить продукт", description = "Удалить продукт по id")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "204", description = "Успшено удален"),
+            @ApiResponse(responseCode = "404", description = "Продукт с отправленным id не был найден",
+                content = {
+                    @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorDto.class))
+                }
+            )
+        })
     @DeleteMapping
-    public ResponseEntity<Void> delete(@RequestParam(name="id", required=true) Long itemId) {
+    public ResponseEntity<Void> delete(
+        @Parameter(name="ID", description = "ID удаляемого продукта", example = "1", required = true)
+        @RequestParam(name="id", required=true) Long itemId
+    ) {
         itemService.delete(itemId);
-        return ResponseEntity.ok().build();
+        return ResponseEntity.noContent().build();
     }
 
+    @Operation(summary = "Найти продукты", description = "При указании id ищет продукт по id, при неуказании id и указании имени ищет продукт по имени, иначе возвращает список продуктов по указанной странице")
+    @ApiResponses(value = {
+            @ApiResponse(
+                responseCode = "200", 
+                description = "Если были указаны id или имя, тело содержит соответствующий продукт, иначе список продуктов по указанной странице",
+                content = {
+                    @Content(mediaType = "application/json", schema = @Schema(implementation = ItemDto.class)),
+                    @Content(mediaType = "application/json", array = @ArraySchema(schema = @Schema(implementation = ItemDto.class)))
+                }
+            ),
+            @ApiResponse(responseCode = "404", description = "Продукт с указанным именем или ID не был найден",
+                content = {
+                    @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorDto.class))
+                }
+            )
+        })
     @GetMapping
     public ResponseEntity<String> find(
+        @Parameter(name="ID", description = "ID продукта", example = "1", required = false)
         @RequestParam(required=false) Long id,
+        @Parameter(name="Номер страницы", description = "Номер страницы (нумерация с 0)", example = "0", required = false)
         @RequestParam(name="pnumber", required=false) Integer _pageNumber,
+        @Parameter(name="Размер страницы", description = "Размер страницы (по умолчанию 50)", example = "10", required = false)
         @RequestParam(name="psize", required=false) Integer _pageSize,
+        @Parameter(name="Имя", description = "Имя продукта", example = "Творог", required = false)
         @RequestParam(required=false) String name
     ) {
-        if (id != null && name == null && _pageNumber == null && _pageSize == null) {
+        if (id != null) {
             return findById(id);
-        } else if (name != null && _pageNumber == null && _pageSize == null) {
+        } else if (name != null) {
             return findByName(name);
         } else {
             Integer pageNumber = (_pageNumber == null) ? 0 : _pageNumber;
@@ -92,7 +157,7 @@ public class ItemController {
     public ResponseEntity<String> findById(Long id) {
         Item item = itemService.findById(id);
         return (item == null) 
-            ? ResponseEntity.status(HttpStatus.NOT_FOUND).build()
+            ? ResponseEntity.notFound().build()
             : ResponseEntity.ok(jsonConvService.conv(
                 conversionService.convert(item, ItemDto.class)
             ));
