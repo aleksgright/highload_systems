@@ -90,7 +90,7 @@ public class UserController {
         })
     @DeleteMapping
     public ResponseEntity<Void> delete(
-        @Parameter(name="ID", description = "ID удаляемого пользователя", example = "1", required = true)
+        @Parameter(description = "ID удаляемого пользователя", example = "1", required = true)
         @RequestParam(required=true) long id
     ) {
         userService.deleteById(id);
@@ -115,9 +115,9 @@ public class UserController {
         })
     @GetMapping
     public ResponseEntity<UserDto> find(
-        @Parameter(name="ID", description = "ID пользователя", example = "1", required = false)
+        @Parameter(description = "ID пользователя", example = "1", required = false)
         @RequestParam(required=false) Long id,
-        @Parameter(name="Имя", description = "Имя пользователя", example = "Олежка", required = false)
+        @Parameter(description = "Имя пользователя", example = "Олежка", required = false)
         @RequestParam(required=false) String name
     ) {
         if (id != null) {

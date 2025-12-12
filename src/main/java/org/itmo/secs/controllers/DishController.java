@@ -105,13 +105,13 @@ public class DishController {
         })
     @GetMapping
     public ResponseEntity<String> find(
-        @Parameter(name="ID", description = "ID продукта", example = "1", required = false)
+        @Parameter(description = "ID продукта", example = "1", required = false)
         @RequestParam(required=false) Long id,
-        @Parameter(name="Номер страницы", description = "Номер страницы (нумерация с 0)", example = "0", required = false)
+        @Parameter(description = "Номер страницы (нумерация с 0)", example = "0", required = false)
         @RequestParam(name="pnumber", required=false) Integer _pageNumber,
-        @Parameter(name="Размер страницы", description = "Размер страницы (по умолчанию 50)", example = "10", required = false)
+        @Parameter(description = "Размер страницы (по умолчанию 50)", example = "10", required = false)
         @RequestParam(name="psize", required=false) Integer _pageSize,
-        @Parameter(name="Имя", description = "Имя продукта", example = "Творог", required = false)
+        @Parameter(description = "Имя продукта", example = "Творог", required = false)
         @RequestParam(required=false) String name
     ) {
         if (id != null) {
@@ -190,7 +190,7 @@ public class DishController {
         })
     @DeleteMapping
     public ResponseEntity<Void> delete(
-        @Parameter(name="ID", description = "ID удаляемого продукта", example = "1", required = true)
+        @Parameter(description = "ID удаляемого продукта", example = "1", required = true)
         @RequestParam(name="id", required=true) Long dishId
     ) {
         dishService.delete(dishId);
@@ -211,9 +211,9 @@ public class DishController {
         })
     @DeleteMapping("/items")
     public ResponseEntity<Void> delete(
-        @Parameter(name="ID продукта", description = "ID удаляемого продукта", example = "1", required = true)
+        @Parameter(description = "ID удаляемого продукта", example = "1", required = true)
         @RequestParam(name="item-id", required=true) Long itemId,
-        @Parameter(name="ID блюда", description = "ID блюда", example = "2", required = true)
+        @Parameter(description = "ID блюда", example = "2", required = true)
         @RequestParam(name="dish-id", required=true) Long dishId
     ) {
         dishService.deleteItem(itemId, dishId);
@@ -237,7 +237,7 @@ public class DishController {
         })
     @GetMapping("/items")
     public ResponseEntity<String> getItems(
-        @Parameter(name="ID", description = "ID блюда", example = "1", required = true)
+        @Parameter(description = "ID блюда", example = "1", required = true)
         @RequestParam(required=true) long id
     ) {
         List<Pair<Item, Integer>> items = dishService.makeListOfItems(id);
