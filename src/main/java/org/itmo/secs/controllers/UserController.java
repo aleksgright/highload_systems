@@ -13,7 +13,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.*;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -27,15 +30,23 @@ import lombok.AllArgsConstructor;
 @AllArgsConstructor
 @RestController
 @RequestMapping(value = "user")
-@Tag(name = "Users API")
+@Tag(name = "Пользователи (Users API)")
 public class UserController {
     private ConversionService conversionService;
     private UserService userService;
 
-    @Operation(summary = "Create new user", description = "Create user by given name")
+    @Operation(summary = "Создать нового пользователя", description = "Создается новый пользователь по отправленному DTO")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "201", description = "Successfully created"), 
-            @ApiResponse(responseCode = "400", description = "User with the same name already exists")
+            @ApiResponse(responseCode = "201", description = "Пользователь был успешно создан",
+                content = {
+                    @Content(mediaType = "application/json", schema = @Schema(implementation = UserDto.class))
+                }
+            ), 
+            @ApiResponse(responseCode = "400", description = "Пользователь с таким же именем уже есть базе",
+                content = {
+                    @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorDto.class))
+                }
+            )
         })
     @PostMapping
     public ResponseEntity<UserDto> create(@RequestBody UserCreateDto userDto) {
@@ -48,21 +59,65 @@ public class UserController {
                 HttpStatus.CREATED);
     }
 
+    @Operation(summary = "Изменить пользователя", description = "Изменяет пользователя из БД по отправленному DTO")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "204", description = "Успешно изменен"), 
+            @ApiResponse(responseCode = "400", description = "Пользователь с именем из DTO уже существует",
+                content = {
+                    @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorDto.class))
+                }
+            ),
+            @ApiResponse(responseCode = "404", description = "Блюдо с id из DTO не было найдено",
+                content = {
+                    @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorDto.class))
+                }
+            )
+        })
     @PutMapping
     public ResponseEntity<Void> update(@RequestBody UserDto userDto) {
         userService.update(new User(userDto.id(), userDto.name(), null));
         return ResponseEntity.ok().build();
     }
 
+    @Operation(summary = "Удалить пользователя", description = "Удалить пользователя по id")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "204", description = "Успшено удален"),
+            @ApiResponse(responseCode = "404", description = "Пользователь с отправленным id не был найден",
+                content = {
+                    @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorDto.class))
+                }
+            )
+        })
     @DeleteMapping
-    public ResponseEntity<Void> delete(@RequestParam(required=true) long id) {
+    public ResponseEntity<Void> delete(
+        @Parameter(name="ID", description = "ID удаляемого пользователя", example = "1", required = true)
+        @RequestParam(required=true) long id
+    ) {
         userService.deleteById(id);
         return ResponseEntity.noContent().build();
     }
 
+    @Operation(summary = "Найти пользователя", description = "При указании id ищет пользователя по id, при указании имени ищет пользователя по имени")
+    @ApiResponses(value = {
+            @ApiResponse(
+                responseCode = "200", 
+                description = "Содержит найденного пользователя",
+                content = {
+                    @Content(mediaType = "application/json", schema = @Schema(implementation = UserDto.class))
+                }
+            ),
+            @ApiResponse(responseCode = "400", description = "Ни ID, ни имя для поиска не были указаны"),
+            @ApiResponse(responseCode = "404", description = "Пользователь с указанным ID или именем не был найдено",
+                content = {
+                    @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorDto.class))
+                }
+            )
+        })
     @GetMapping
     public ResponseEntity<UserDto> find(
+        @Parameter(name="ID", description = "ID пользователя", example = "1", required = false)
         @RequestParam(required=false) Long id,
+        @Parameter(name="Имя", description = "Имя пользователя", example = "Олежка", required = false)
         @RequestParam(required=false) String name
     ) {
         if (id != null) {
