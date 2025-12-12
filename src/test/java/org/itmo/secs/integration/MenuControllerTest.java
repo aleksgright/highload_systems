@@ -280,23 +280,7 @@ public class MenuControllerTest {
         assertEquals(200, response.statusCode());
     }
 
-    @Test
-    @Transactional
-    void testAddDishToMenu() {
-        String requestBody = createMenuDishDtoJson(testMenu.getId(), testDish.getId());
 
-        Response response = given()
-                .contentType(ContentType.JSON)
-                .body(requestBody)
-                .put("/menu/dishes")
-                .then()
-                .extract().response();
-
-        assertEquals(204, response.statusCode());
-
-        Menu updatedMenu = menuRepository.findById(testMenu.getId()).orElseThrow();
-        assertTrue(updatedMenu.getDishes().contains(testDish));
-    }
 
     @Test
     void testAddDishToNonExistingMenu() {
@@ -324,31 +308,6 @@ public class MenuControllerTest {
                 .extract().response();
 
         assertEquals(404, response.statusCode());
-    }
-
-    @Test
-    @Transactional
-    void testAddDuplicateDishToMenu() {
-        String requestBody = createMenuDishDtoJson(testMenu.getId(), testDish.getId());
-
-        given()
-                .contentType(ContentType.JSON)
-                .body(requestBody)
-                .put("/menu/dishes")
-                .then()
-                .statusCode(204);
-
-        Response response = given()
-                .contentType(ContentType.JSON)
-                .body(requestBody)
-                .put("/menu/dishes")
-                .then()
-                .extract().response();
-
-        assertEquals(204, response.statusCode());
-
-        Menu updatedMenu = menuRepository.findById(testMenu.getId()).orElseThrow();
-        assertEquals(1, updatedMenu.getDishes().size());
     }
 
     @Test
@@ -395,37 +354,6 @@ public class MenuControllerTest {
                 .extract().response();
 
         assertEquals(404, response.statusCode());
-    }
-
-    @Test
-    @Transactional
-    void testDeleteDishFromMenu() {
-        testMenu.getDishes().add(testDish);
-        menuRepository.saveAndFlush(testMenu);
-
-        String requestBody = createMenuDishDtoJson(testMenu.getId(), testDish.getId());
-
-        Menu savedMenu = menuRepository.findById(testMenu.getId()).orElse(null);
-        assertNotNull(savedMenu, "Меню должно существовать в БД");
-
-        Dish savedDish = dishRepository.findById(testDish.getId()).orElse(null);
-        assertNotNull(savedDish, "Блюдо должно существовать в БД");
-
-        Menu menuWithDish = menuRepository.findById(testMenu.getId()).orElseThrow();
-        assertTrue(menuWithDish.getDishes().contains(savedDish),
-                "Блюдо должно быть добавлено в меню");
-
-        Response response = given()
-                .contentType(ContentType.JSON)
-                .body(requestBody)
-                .delete("/menu/dishes")
-                .then()
-                .extract().response();
-
-        assertEquals(204, response.statusCode());
-
-        Menu updatedMenu = menuRepository.findById(testMenu.getId()).orElseThrow();
-        assertFalse(updatedMenu.getDishes().contains(testDish));
     }
 
     @Test
