@@ -1,6 +1,5 @@
 package org.itmo.secs.model.dto;
 
-import org.itmo.secs.model.entities.enums.Meal;
 import org.itmo.secs.utils.json.LocalDateSerializer;
 import org.springframework.format.annotation.DateTimeFormat;
 
