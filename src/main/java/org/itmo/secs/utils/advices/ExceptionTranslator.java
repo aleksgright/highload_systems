@@ -9,6 +9,8 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
+import jakarta.validation.ConstraintViolationException;
+
 @RestControllerAdvice
 public class ExceptionTranslator {
     @ExceptionHandler(ItemNotFoundException.class)
@@ -22,6 +24,13 @@ public class ExceptionTranslator {
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ResponseBody
     public ErrorDto processItemNotFoundException(DataIntegrityViolationException ex) {
+        return new ErrorDto(ex.getMessage());
+    }
+
+    @ExceptionHandler(ConstraintViolationException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    @ResponseBody
+    public ErrorDto processItemNotFound(ConstraintViolationException ex) {
         return new ErrorDto(ex.getMessage());
     }
 }
