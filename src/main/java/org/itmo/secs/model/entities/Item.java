@@ -6,6 +6,7 @@ import java.util.List;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PositiveOrZero;
+import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -26,7 +27,7 @@ public class Item {
     @PositiveOrZero
     private Integer calories;
 
-    @NotNull
+    @Size(min = 3, max = 16)
     @Column(unique = true)
     private String name;
 

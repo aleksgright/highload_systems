@@ -130,7 +130,7 @@ public class ItemControllerTest {
                 .then()
                 .extract().response();
 
-        assertEquals(200, response.statusCode());
+        assertEquals(204, response.statusCode());
 
         Item updatedItem = itemRepository.findById(existingItem.getId()).orElseThrow();
         assertEquals("UpdatedMilk", updatedItem.getName());
@@ -165,7 +165,7 @@ public class ItemControllerTest {
                 .then()
                 .extract().response();
 
-        assertEquals(200, response.statusCode());
+        assertEquals(204, response.statusCode());
         assertFalse(itemRepository.existsById(existingItem.getId()));
     }
 
