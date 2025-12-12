@@ -4,7 +4,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 
 @Schema(name = "Объект для создания нового продукта", description = "Содержит поля для создания нового продукта")
 public record ItemCreateDto(
-    @Schema(description = "Имя продукта", type = "string", example = "Хлеб")
+    @Schema(description = "Имя продукта (от 3 до 15 символов)", type = "string", example = "Хлеб")
     String name,
     @Schema(description = "Ккал (на 100 г)", type = "number", example = "220")
     Integer calories,

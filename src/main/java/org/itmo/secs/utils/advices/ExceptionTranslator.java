@@ -30,7 +30,7 @@ public class ExceptionTranslator {
     @ExceptionHandler(ConstraintViolationException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ResponseBody
-    public ErrorDto processItemNotFound(ConstraintViolationException ex) {
-        return new ErrorDto(ex.getMessage());
+    public ErrorDto processConstraintViolationException(ConstraintViolationException ex) {
+        return new ErrorDto("Field validation failed");
     }
 }
