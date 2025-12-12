@@ -179,6 +179,24 @@ public class DishController {
         return ResponseEntity.noContent().build();
     }
 
+    @Operation(summary = "Удалить блюдо", description = "Удалить блюдо по id")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "204", description = "Успшено удалено"),
+            @ApiResponse(responseCode = "404", description = "Блюдо с отправленным id не было найдено",
+                content = {
+                    @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorDto.class))
+                }
+            )
+        })
+    @DeleteMapping
+    public ResponseEntity<Void> delete(
+        @Parameter(name="ID", description = "ID удаляемого продукта", example = "1", required = true)
+        @RequestParam(name="id", required=true) Long dishId
+    ) {
+        dishService.delete(dishId);
+        return ResponseEntity.noContent().build();
+    }
+
     @Operation(summary = "Удалить продукт из блюда", description = "При наличии блюда с указанным ip удаляет из него продукт с указанным id")
     @ApiResponses(value = {
             @ApiResponse(

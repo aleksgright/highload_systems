@@ -77,6 +77,14 @@ public class DishService {
     }
 
     @Transactional(isolation=Isolation.SERIALIZABLE)
+    public void delete(Long id) {
+        if (dishRepository.findById(id).isEmpty()) {
+            throw new ItemNotFoundException("Dish with id " + id.toString() + " was not found");
+        }
+        dishRepository.deleteById(id);
+    }
+
+    @Transactional(isolation=Isolation.SERIALIZABLE)
     public List<Pair<Item, Integer>> makeListOfItems(Long dishId) {
         List<ItemDish> itemDishes = itemDishService.findAllByDishId(dishId);
         List<Pair<Item, Integer>> items = new ArrayList<>();
