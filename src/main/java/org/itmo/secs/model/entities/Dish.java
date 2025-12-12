@@ -30,10 +30,4 @@ public class Dish {
     @ManyToMany(mappedBy = "dishes", cascade = CascadeType.REMOVE)
     @NotNull
     private List<Menu> menus = new ArrayList<>();
-
-    public Dish (String name, List<ItemDish> items_dishes, List<Menu> menus) {
-        this.name = name;
-        this.items_dishes = items_dishes;
-        this.menus = menus;
-    }
 }
