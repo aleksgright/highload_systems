@@ -1,9 +1,9 @@
 FROM gradle:jdk21 as build
-COPY . /src
-WORKDIR /src
-RUN gradle clean bootJar
+COPY . /user-accounter/src
+WORKDIR /user-accounter/src
+RUN ./gradlew build -x test
 
 FROM amazoncorretto:21 as runner
 WORKDIR /app
-COPY --from=build /src/src/build/libs/*.jar app.jar
-ENTRYPOINT ["java","-jar","app.jar"]
+COPY --from=build /user-accounter/src/build/libs/*.jar user-accounter.jar
+ENTRYPOINT ["java","-jar","user-accounter.jar"]
