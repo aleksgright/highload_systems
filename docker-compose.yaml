@@ -14,7 +14,7 @@ services:
       - highload-network
 
   app:
-    build: .
+    build: ./main
     container_name: highload-app
     environment:
       DB_URL: jdbc:postgresql://highload-db:5432/highload
@@ -26,6 +26,19 @@ services:
       - highload-db
     networks:
       - highload-network
+
+  user-service:
+    build: ./user-accounter
+    container_name: highload-user-accounter
+    networks:
+      - highload-network
+    ports:
+      - "8080:8080"
+    depends_on:
+      - highload-db
+#      - config-server
+#      - eureka-server
+#      - postgres
 
 volumes:
   highload_db_data:
