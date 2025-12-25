@@ -13,6 +13,25 @@ services:
     networks:
       - highload-network
 
+  config-server:
+    build: ./config-server
+    container_name: config-server
+    ports:
+      - "8888:8888"
+    networks:
+      - highload-network
+
+  eureka-server:
+    build: ./eureka-server
+    container_name: eureka-server
+    ports:
+      - "8761:8761"
+    networks:
+      - highload-network
+    depends_on:
+      - highload-db
+      - config-server
+
   app:
     build: ./main
     container_name: highload-app
@@ -24,6 +43,8 @@ services:
       - "8080:8080"
     depends_on:
       - highload-db
+      - config-server
+      - eureka-server
     networks:
       - highload-network
 
@@ -36,9 +57,8 @@ services:
       - "8081:8081"
     depends_on:
       - highload-db
-#      - config-server
-#      - eureka-server
-#      - postgres
+      - config-server
+      - eureka-server
 
 volumes:
   highload_db_data:

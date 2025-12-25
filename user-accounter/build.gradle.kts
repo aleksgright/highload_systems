@@ -1,7 +1,7 @@
 plugins {
     id("java")
     id("java-library")
-    id("org.springframework.boot") version "3.2.0"
+    id("org.springframework.boot") version "3.5.6"
     id("io.spring.dependency-management") version "1.1.4"
 }
 
@@ -24,6 +24,8 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-validation")
     implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.3.0")
     implementation("org.springframework.boot:spring-boot-starter-thymeleaf")
+    implementation("org.springframework.cloud:spring-cloud-starter-config")
+    implementation("org.springframework.cloud:spring-cloud-starter-netflix-eureka-client")
 
     runtimeOnly("org.postgresql:postgresql")
 
@@ -36,6 +38,12 @@ dependencies {
     testImplementation("org.testcontainers:postgresql")
     testImplementation("io.rest-assured:rest-assured:5.5.6")
     testImplementation("com.google.code.gson:gson:2.13.2")
+}
+
+dependencyManagement {
+    imports {
+        mavenBom("org.springframework.cloud:spring-cloud-dependencies:2025.0.0")
+    }
 }
 
 tasks.test {
