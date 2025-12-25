@@ -32,6 +32,17 @@ services:
       - highload-db
       - config-server
 
+  gateway:
+    build: ./gateway
+    container_name: gateway
+    ports:
+      - "8080:8080"
+    depends_on:
+      - config-server
+      - eureka-server
+    networks:
+      - highload-network
+
   app:
     build: ./main
     container_name: highload-app
@@ -40,7 +51,7 @@ services:
       DB_USERNAME: postgres
       DB_PASSWORD: password
     ports:
-      - "8080:8080"
+      - "8082:8082"
     depends_on:
       - highload-db
       - config-server
