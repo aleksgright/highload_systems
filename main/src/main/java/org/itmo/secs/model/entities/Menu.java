@@ -34,10 +34,8 @@ public class Menu {
 
     @NotNull
     private LocalDate date;
-
-    @ManyToOne
-    @JoinColumn(name = "user_id")
-    private User user;
+    
+    private Long user_id;
 
     @NotNull
     @Enumerated(EnumType.STRING)

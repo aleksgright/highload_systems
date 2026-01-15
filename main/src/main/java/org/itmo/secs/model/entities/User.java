@@ -23,14 +23,4 @@ public class User {
     @NotNull
     @Column(unique = true)
     private String name;
-
-    @OneToMany(mappedBy = "user")
-    private List<Menu> menus;
-
-    @PreRemove
-    public void setNullInMenus() {
-        for (var menu : menus) {
-            menu.setUser(null);
-        }
-    }
 }

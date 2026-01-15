@@ -17,6 +17,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 
+import reactor.core.publisher.Mono;
+import reactor.core.publisher.Flux;
+
 @Service
 @AllArgsConstructor
 public class DishService {
@@ -25,55 +28,54 @@ public class DishService {
     private final ItemService itemService;
 
     @Transactional(isolation=Isolation.SERIALIZABLE)
-    public Dish save(Dish dish) {
-        if (findByName(dish.getName()) != null) {
+    public Mono<Dish> save(Dish dish) {
+        if (dishRepository.findByName(id).isEmpty()) {
             throw new DataIntegrityViolationException("Dish with name " + dish.getName() + " already exist");
         }
 
-        return dishRepository.save(dish);
+        return Mono.just(dishRepository.save(dish));
     }
 
     @Transactional(isolation=Isolation.SERIALIZABLE)
     public void addItem(Long itemId, Long dishId, int count) {
-        Dish dish = findById(dishId);
-        Item item = itemService.findById(itemId);
+        Dish dish = dishRepository.findById(dishId).orElse(null);
         if (dish == null) {
             throw new ItemNotFoundException("Dish with id " + dishId + " was not found");
         }
-        if (item == null) {
-            throw new ItemNotFoundException("Item with id " + itemId + " was not found");
-        }
-        itemDishService.updateItemDishCount(item, dish, count);
+
+        itemService.findById(itemId)
+        .switchIfEmpty(Mono.error(new ItemNotFoundException("Item with id " + itemId + " was not found")))
+        .map(x -> itemDishService.updateItemDishCount(item, dish, count)).subscribe();
     }
 
     @Transactional(isolation=Isolation.SERIALIZABLE)
     public void deleteItem(Long itemId, Long dishId) {
-        Dish dish = findById(dishId);
-        Item item = itemService.findById(itemId);
+        Dish dish = dishRepository.findById(id).orElse(null);
+
         if (dish == null) {
             throw new ItemNotFoundException("Dish with id " + itemId + " was not found");
         }
-        if (item == null) {
-            throw new ItemNotFoundException("Item with id " + itemId + " was not found");
-        }
-        itemDishService.delete(item, dish);
+
+        itemService.findById(itemId)
+        .switchIfEmpty(Mono.error(new ItemNotFoundException("Item with id " + itemId + " was not found")))
+        .map(x -> itemDishService.delete(item, dish)).subscribe();
     }
 
     @Transactional(isolation=Isolation.SERIALIZABLE)
     public void updateName(Dish dish) {
-        if (findById(dish.getId()) == null) {
-            throw new ItemNotFoundException("Dish with id " + dish.getId() + " was not found");
-        }
-    
-        dishRepository.save(dish);
+        findById(dish.getId())
+        .switchIfEmpty(Mono.error(new ItemNotFoundException("Dish with id " + dish.getId() + " was not found")))
+        .map(x -> dishRepository.save(dish)).subscribe();
     }
 
-    public Dish findById(Long id) {
-        return dishRepository.findById(id).orElse(null);
+    public Mono<Dish> findById(Long id) {
+        Dish dish = dishRepository.findById(id).orElse(null);
+        return (dish != null) ? Mono.just(dish) : Mono.empty();
     }
 
-    public Dish findByName(String name) {
-        return dishRepository.findByName(name).orElse(null);
+    public Mono<Dish> findByName(String name) {
+        Dish dish = dishRepository.findByName(id).orElse(null);
+        return (dish != null) ? Mono.just(dish) : Mono.empty();
     }
 
     @Transactional(isolation=Isolation.SERIALIZABLE)
@@ -85,21 +87,15 @@ public class DishService {
     }
 
     @Transactional(isolation=Isolation.SERIALIZABLE)
-    public List<Pair<Item, Integer>> makeListOfItems(Long dishId) {
-        List<ItemDish> itemDishes = itemDishService.findAllByDishId(dishId);
-        List<Pair<Item, Integer>> items = new ArrayList<>();
-
-        itemDishes.forEach(
-            (ItemDish itemDish) -> {
-                items.add(Pair.of(itemDish.getItem(), itemDish.getCount()));
-            }
-        );
-
-        return items;
+    public Flux<Pair<Item, Integer>> makeListOfItems(Long dishId) {
+        return itemDishService.findAllByDishId(dishId)
+        .map((itemDish) -> {
+            return Pair.of(itemDish.getItem(), itemDish.getCount());
+        });
     }
 
-    public List<Dish> findAll(int page, int size) {
+    public Flux<Dish> findAll(int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
-        return dishRepository.findAll(pageable).toList();
+        return Flux.fromIterable(dishRepository.findAll(pageable).toList());
     }
 }
