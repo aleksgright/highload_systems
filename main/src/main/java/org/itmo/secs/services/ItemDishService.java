@@ -14,6 +14,9 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.Optional;
 import java.util.List;
 
+import reactor.core.publisher.Mono;
+import reactor.core.publisher.Flux;
+
 @Service
 @AllArgsConstructor
 public class ItemDishService {
@@ -37,21 +40,21 @@ public class ItemDishService {
     }
 
     @Transactional(isolation=Isolation.SERIALIZABLE)
-    public ItemDish delete(Item item, Dish dish) {
-        Optional<ItemDish> itemDishOpt = itemDishRepository.findById_ItemIdAndId_DishId(item.getId(), dish.getId());
-        if (itemDishOpt.isEmpty()) {
-            throw new ItemNotFoundException("Item with id " + item.getId() + " was not found in Dish with id " + dish.getId());
-        }
-
-        itemDishRepository.delete(itemDishOpt.get());
-        return itemDishOpt.get();
+    public Mono<ItemDish> delete(Item item, Dish dish) {
+        return findById(item.getId(), dish.getId())
+            .switchIfEmpty(Mono.error(new ItemNotFoundException("Item with id " + item.getId() + " was not found in Dish with id " + dish.getId())))
+            .map(x -> {
+                itemDishRepository.delete(x);
+                return x;
+            });
     }
 
-    public ItemDish findById(long itemId, long dishId) {
-        return itemDishRepository.findById_ItemIdAndId_DishId(itemId, dishId).orElse(null);
+    public Mono<ItemDish> findById(long itemId, long dishId) {
+        ItemDish itemDish = itemDishRepository.findById_ItemIdAndId_DishId(itemId, dishId).orElse(null);
+        return (itemDish != null) ? Mono.just(itemDish) : Mono.empty();
     }
 
-    public List<ItemDish> findAllByDishId(long dishId) {
-        return itemDishRepository.findAllById_DishId(dishId);
+    public Flux<ItemDish> findAllByDishId(long dishId) {
+        return Flux.fromIterable(itemDishRepository.findAllById_DishId(dishId));
     }
 }

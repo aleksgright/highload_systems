@@ -13,44 +13,47 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 
+import reactor.core.publisher.Mono;
+import reactor.core.publisher.Flux;
+
 @Service
 @AllArgsConstructor
 public class ItemService {
     private final ItemRepository itemRepository;
 
     @Transactional(isolation=Isolation.SERIALIZABLE)
-    public Item save(Item item) {
+    public Mono<Item> save(Item item) {
         if (findByName(item.getName()) != null) {
             throw new DataIntegrityViolationException("Item with name " + item.getName() + " already exist");
         }
         
-        return itemRepository.save(item);
+        return Mono.just(itemRepository.save(item));
     }
     
     @Transactional(isolation=Isolation.SERIALIZABLE)
     public void update(Item item) {
-        if (findById(item.getId()) == null) {
-            throw new ItemNotFoundException("Item with id " + item.getId() + " was not found");
-        }
-        
-        itemRepository.save(item);
+        findById(item.getId())
+            .switchIfEmpty(Mono.error(new ItemNotFoundException("Item with id " + item.getId() + " was not found"))) 
+            .map(x -> itemRepository.save(item)).subscribe();
     }
 
-    public Item findById(Long id) {
-        return itemRepository.findById(id).orElse(null);
+    public Mono<Item> findById(Long id) {
+        Item item = itemRepository.findById(id).orElse(null);
+        return (item != null) ? Mono.just(item) : Mono.empty();
     }
 
-    public Item findByName(String name) {
-        return itemRepository.findByName(name).orElse(null);
+    public Mono<Item> findByName(String name) {
+        Item item = itemRepository.findByName(name).orElse(null);
+        return (item != null) ? Mono.just(item) : Mono.empty();
     }
 
-    public List<Item> findAll(int page, int size) {
+    public Flux<Item> findAll(int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
-        return itemRepository.findAll(pageable).toList();
+        return Flux.fromIterable(itemRepository.findAll(pageable).toList());
     }
 
-    public long count() {
-        return itemRepository.count();
+    public Mono<Long> count() {
+        return Mono.just(itemRepository.count());
     }
 
     @Transactional(isolation=Isolation.SERIALIZABLE)
