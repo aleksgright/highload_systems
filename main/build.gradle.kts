@@ -26,6 +26,7 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-thymeleaf")
     implementation("org.springframework.cloud:spring-cloud-starter-config")
     implementation("org.springframework.cloud:spring-cloud-starter-netflix-eureka-client")
+    implementation("com.playtika.reactivefeign:feign-reactor-spring-cloud-starter:4.2.1")
 
     runtimeOnly("org.postgresql:postgresql")
 
