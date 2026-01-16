@@ -10,11 +10,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import org.itmo.secs.model.dto.*;
-import org.itmo.secs.model.entities.Dish;
 import org.itmo.secs.model.entities.Menu;
 import org.itmo.secs.services.*;
 import org.itmo.secs.utils.conf.PagingConf;
@@ -27,13 +23,14 @@ import lombok.AllArgsConstructor;
 import reactor.core.publisher.Mono;
 import reactor.core.publisher.Flux;
 
+import java.util.Objects;
+
 @AllArgsConstructor
 @RestController
 @RequestMapping(value = "menu")
 @Tag(name = "Меню (Menus API)")
 public class MenuController {
     private MenuService menuService;
-    private UserService userService;
     private ConversionService conversionService;
     private final JsonConvService jsonConvService;
     private final PagingConf pagingConf;
@@ -54,8 +51,8 @@ public class MenuController {
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public Mono<MenuDto> create(@RequestBody MenuCreateDto menuDto) {
-        return menuService.save(conversionService.convert(menuDto, Menu.class))
-                .map((menu) -> conversionService.convert(menu, MenuDto.class));
+        return menuService.save(Objects.requireNonNull(conversionService.convert(menuDto, Menu.class)))
+                .map((menu) -> Objects.requireNonNull(conversionService.convert(menu, MenuDto.class)));
     }
 
     @Operation(summary = "Изменить меню", description = "Изменяет меню из БД по отправленному DTO")
@@ -75,7 +72,7 @@ public class MenuController {
     @PutMapping
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public Mono<Void> update(@RequestBody MenuDto menuDto) {
-        menuService.update(conversionService.convert(menuDto, Menu.class));
+        menuService.update(Objects.requireNonNull(conversionService.convert(menuDto, Menu.class)));
         return Mono.empty();
     }
 
@@ -92,7 +89,7 @@ public class MenuController {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public Mono<Void> delete(
         @Parameter(description = "ID удаляемого меню", example = "1", required = true)
-        @RequestParam(name="id", required=true) Long menuId
+        @RequestParam(name="id") Long menuId
     ) {
         menuService.delete(menuId);
         return Mono.empty();
@@ -116,11 +113,11 @@ public class MenuController {
         })
     @GetMapping
     public Mono<ResponseEntity<String>> find(
-        @Parameter(description = "ID продукта", example = "1", required = false)
+        @Parameter(description = "ID продукта", example = "1")
         @RequestParam(required=false) Long id,
-        @Parameter(description = "Номер страницы (нумерация с 0)", example = "0", required = false)
+        @Parameter(description = "Номер страницы (нумерация с 0)", example = "0")
         @RequestParam(name="pnumber", required=false) Integer _pageNumber,
-        @Parameter(description = "Размер страницы (по умолчанию 50)", example = "10", required = false)
+        @Parameter(description = "Размер страницы (по умолчанию 50)", example = "10")
         @RequestParam(name="psize", required=false) Integer _pageSize
     ) {
         if (id != null) {
@@ -138,7 +135,7 @@ public class MenuController {
 
     public Mono<ResponseEntity<String>> findAll(Integer pageNumber, Integer pageSize) {
         return menuService.findAll(pageNumber, pageSize)
-        .map((it) -> conversionService.convert(it, MenuDto.class))
+        .map((it) -> Objects.requireNonNull(conversionService.convert(it, MenuDto.class)))
         .collectList()
         .map(menusDto -> ResponseEntity.ok(jsonConvService.conv(menusDto)));
     }
@@ -188,12 +185,10 @@ public class MenuController {
     @GetMapping("/dishes")
     public Flux<DishDto> getDishes(
         @Parameter(description = "ID меню", example = "1", required = true)
-        @RequestParam(required=true) Long id
+        @RequestParam() Long id
     ) {
         return menuService.makeListOfDishes(id)
-                .map((it) -> {
-                    return conversionService.convert(it, DishDto.class);
-                });
+                .map((it) -> Objects.requireNonNull(conversionService.convert(it, DishDto.class)));
     }
 
     @Operation(summary = "Удалить блюдо из меню", description = "При наличии меню с указанным ip удаляет из него блюдо с указанным id")

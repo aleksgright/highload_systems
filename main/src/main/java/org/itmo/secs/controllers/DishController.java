@@ -2,16 +2,10 @@ package org.itmo.secs.controllers;
 
 import lombok.AllArgsConstructor;
 
-import java.util.List;
-import org.springframework.data.util.Pair;
-import java.util.ArrayList;
-
 import org.itmo.secs.model.dto.*;
 import org.itmo.secs.model.entities.Dish;
-import org.itmo.secs.model.entities.Item;
 import org.itmo.secs.services.*;
 import org.itmo.secs.utils.conf.PagingConf;
-import org.springframework.core.convert.ConversionException;
 import org.springframework.core.convert.ConversionService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -28,13 +22,14 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import reactor.core.publisher.Mono;
 import reactor.core.publisher.Flux;
 
+import java.util.Objects;
+
 @AllArgsConstructor
 @RestController
 @RequestMapping(value = "dish")
 @Tag(name = "Блюда (Dishes API)")
 public class DishController {
     private final DishService dishService;
-    private final ItemDishService itemDishService;
     private final ConversionService conversionService;
     private final JsonConvService jsonConvService;
     private final PagingConf pagingConf;
@@ -56,7 +51,7 @@ public class DishController {
     @ResponseStatus(HttpStatus.CREATED)
     public Mono<DishDto> create(@RequestBody DishCreateDto dishCreateDto) {
         return dishService.save(conversionService.convert(dishCreateDto, Dish.class))
-            .map((dish) -> conversionService.convert(dish, DishDto.class));
+            .map((dish) -> Objects.requireNonNull(conversionService.convert(dish, DishDto.class)));
     }
 
     @Operation(summary = "Изменить блюдо", description = "Изменяет блюдо из БД по отправленному DTO")
@@ -75,7 +70,7 @@ public class DishController {
         })
     @PutMapping
     public Mono<Void> updateName(@RequestBody DishUpdateNameDto dishUpdateNameDto) {
-        dishService.updateName(conversionService.convert(dishUpdateNameDto, Dish.class));
+        dishService.updateName(Objects.requireNonNull(conversionService.convert(dishUpdateNameDto, Dish.class)));
         return Mono.empty();
     }
 
@@ -97,13 +92,13 @@ public class DishController {
         })
     @GetMapping
     public Mono<ResponseEntity<String>> find(
-        @Parameter(description = "ID продукта", example = "1", required = false)
+        @Parameter(description = "ID продукта", example = "1")
         @RequestParam(required=false) Long id,
-        @Parameter(description = "Номер страницы (нумерация с 0)", example = "0", required = false)
+        @Parameter(description = "Номер страницы (нумерация с 0)", example = "0")
         @RequestParam(name="pnumber", required=false) Integer _pageNumber,
-        @Parameter(description = "Размер страницы (по умолчанию 50)", example = "10", required = false)
+        @Parameter(description = "Размер страницы (по умолчанию 50)", example = "10")
         @RequestParam(name="psize", required=false) Integer _pageSize,
-        @Parameter(description = "Имя продукта", example = "Творог", required = false)
+        @Parameter(description = "Имя продукта", example = "Творог")
         @RequestParam(required=false) String name
     ) {
         if (id != null) {
@@ -142,12 +137,10 @@ public class DishController {
 
     public Mono<ResponseEntity<String>> findAll(Integer pageNumber, Integer pageSize) {
         return dishService.findAll(pageNumber, pageSize)
-        .map((d) -> conversionService.convert(d, DishDto.class))
+        .map((d) -> Objects.requireNonNull(conversionService.convert(d, DishDto.class)))
         .collectList()
         .map(
-            (dishesDto) -> {
-                return ResponseEntity.ok().header("Content-Type", "application/json").body(jsonConvService.conv(dishesDto));
-            }
+            (dishesDto) -> ResponseEntity.ok().header("Content-Type", "application/json").body(jsonConvService.conv(dishesDto))
         );
     }
 
@@ -183,7 +176,7 @@ public class DishController {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public Mono<Void> delete(
         @Parameter(description = "ID удаляемого продукта", example = "1", required = true)
-        @RequestParam(name="id", required=true) Long dishId
+        @RequestParam(name="id") Long dishId
     ) {
         dishService.delete(dishId);
         return Mono.empty();
@@ -205,9 +198,9 @@ public class DishController {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public Mono<Void> delete(
         @Parameter(description = "ID удаляемого продукта", example = "1", required = true)
-        @RequestParam(name="item-id", required=true) Long itemId,
+        @RequestParam(name="item-id") Long itemId,
         @Parameter(description = "ID блюда", example = "2", required = true)
-        @RequestParam(name="dish-id", required=true) Long dishId
+        @RequestParam(name="dish-id") Long dishId
     ) {
         dishService.deleteItem(itemId, dishId);
         return Mono.empty();
@@ -231,7 +224,7 @@ public class DishController {
     @GetMapping("/items")
     public Flux<ItemCountDto> getItems(
         @Parameter(description = "ID блюда", example = "1", required = true)
-        @RequestParam(required=true) long id
+        @RequestParam() long id
     ) {
         return dishService.makeListOfItems(id)
         .map((it) -> new ItemCountDto(conversionService.convert(it.getFirst(), ItemDto.class), it.getSecond()));

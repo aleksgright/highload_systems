@@ -6,7 +6,6 @@ import org.itmo.secs.model.dto.*;
 import org.itmo.secs.model.entities.Item;
 import org.itmo.secs.services.ItemService;
 import org.itmo.secs.services.JsonConvService;
-import org.springframework.core.convert.ConversionException;
 import org.springframework.core.convert.ConversionService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -18,13 +17,11 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.v3.oas.annotations.media.*;
 
-import java.util.List;
-import java.util.ArrayList;
-
 import org.itmo.secs.utils.conf.PagingConf;
 
 import reactor.core.publisher.Mono;
-import reactor.core.publisher.Flux;
+
+import java.util.Objects;
 
 @AllArgsConstructor
 @RestController
@@ -52,9 +49,9 @@ public class ItemController {
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public Mono<ItemDto> create(@RequestBody ItemCreateDto itemCreateDto) {
-        return itemService.save(conversionService.convert(itemCreateDto, Item.class))
+        return itemService.save(Objects.requireNonNull(conversionService.convert(itemCreateDto, Item.class)))
                 .map(item ->
-                    conversionService.convert(item, ItemDto.class)
+                        Objects.requireNonNull(conversionService.convert(item, ItemDto.class))
                 );
     }
 
@@ -75,7 +72,7 @@ public class ItemController {
     @PutMapping
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public Mono<Void> update(@RequestBody ItemUpdateDto itemUpdateDto) {
-        itemService.update(conversionService.convert(itemUpdateDto, Item.class));
+        itemService.update(Objects.requireNonNull(conversionService.convert(itemUpdateDto, Item.class)));
         return Mono.empty();
     }
 
@@ -92,7 +89,7 @@ public class ItemController {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public Mono<Void> delete(
         @Parameter(description = "ID удаляемого продукта", example = "1", required = true)
-        @RequestParam(name="id", required=true) Long itemId
+        @RequestParam(name="id") Long itemId
     ) {
         itemService.delete(itemId);
         return Mono.empty();
@@ -116,13 +113,13 @@ public class ItemController {
         })
     @GetMapping
     public Mono<ResponseEntity<String>> find(
-        @Parameter(description = "ID продукта", example = "1", required = false)
+        @Parameter(description = "ID продукта", example = "1")
         @RequestParam(required=false) Long id,
-        @Parameter(description = "Номер страницы (нумерация с 0)", example = "0", required = false)
+        @Parameter(description = "Номер страницы (нумерация с 0)", example = "0")
         @RequestParam(name="pnumber", required=false) Integer _pageNumber,
-        @Parameter(description = "Размер страницы (по умолчанию 50)", example = "10", required = false)
+        @Parameter(description = "Размер страницы (по умолчанию 50)", example = "10")
         @RequestParam(name="psize", required=false) Integer _pageSize,
-        @Parameter(description = "Имя продукта", example = "Творог", required = false)
+        @Parameter(description = "Имя продукта", example = "Творог")
         @RequestParam(required=false) String name
     ) {
         if (id != null) {
@@ -144,7 +141,7 @@ public class ItemController {
     public Mono<ResponseEntity<String>> findAll(Integer pageNumber, Integer pageSize) {
         return Mono.zip(
             itemService.findAll(pageNumber, pageSize)
-            .map((it) -> conversionService.convert(it, ItemDto.class))
+            .map((it) -> Objects.requireNonNull(conversionService.convert(it, ItemDto.class)))
             .collectList(),
             itemService.count(), (itemsDto, count) ->
                 ResponseEntity.ok()
@@ -154,18 +151,18 @@ public class ItemController {
     }
 
     public Mono<ResponseEntity<String>> findById(Long id) {
-        return itemService.findById(id).map((item) -> (item == null) 
-            ? ResponseEntity.notFound().build()
-            : ResponseEntity.ok(jsonConvService.conv(
-                conversionService.convert(item, ItemDto.class)
-            )));
+        return itemService.findById(id)
+                .map((item) -> ResponseEntity.ok(jsonConvService.conv(
+                        conversionService.convert(item, ItemDto.class)
+                    )))
+                .switchIfEmpty(Mono.just(ResponseEntity.notFound().build()));
     }
 
     public Mono<ResponseEntity<String>> findByName(String name) {
-        return itemService.findByName(name).map((item) -> (item == null) 
-            ? ResponseEntity.status(HttpStatus.NOT_FOUND).build()
-            : ResponseEntity.ok(jsonConvService.conv(
-                conversionService.convert(item, ItemDto.class)
-            )));
+        return itemService.findByName(name)
+                .map((item) -> ResponseEntity.ok(jsonConvService.conv(
+                        conversionService.convert(item, ItemDto.class)
+                    )))
+                .switchIfEmpty(Mono.just(ResponseEntity.notFound().build()));
     }
 }

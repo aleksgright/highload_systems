@@ -135,7 +135,7 @@ public class MenuService {
     public Flux<Dish> makeListOfDishes(Long menuId) {
         Menu menu = menuRep.findById(menuId).orElse(null);
         if (menu == null) {
-            throw new ItemNotFoundException("Menu with id " + menuId.toString() + " was not found");
+            throw new ItemNotFoundException("Menu with id " + menuId + " was not found");
         }
 
         return Flux.fromIterable(new ArrayList<>(menu.getDishes()));
