@@ -21,8 +21,10 @@ import io.swagger.v3.oas.annotations.media.*;
 import java.util.List;
 import java.util.ArrayList;
 
-import org.itmo.secs.model.dto.ItemDto;
 import org.itmo.secs.utils.conf.PagingConf;
+
+import reactor.core.publisher.Mono;
+import reactor.core.publisher.Flux;
 
 @AllArgsConstructor
 @RestController
@@ -48,12 +50,12 @@ public class ItemController {
             )
         })
     @PostMapping
-    public ResponseEntity<ItemDto> create(@RequestBody ItemCreateDto itemCreateDto) {
-        return new ResponseEntity<>(
-                conversionService.convert(
-                        itemService.save(conversionService.convert(itemCreateDto, Item.class)),
-                        ItemDto.class),
-                HttpStatus.CREATED);
+    @ResponseStatus(HttpStatus.CREATED)
+    public Mono<ItemDto> create(@RequestBody ItemCreateDto itemCreateDto) {
+        return itemService.save(conversionService.convert(itemCreateDto, Item.class))
+                .map(item ->
+                    conversionService.convert(item, ItemDto.class)
+                );
     }
 
     @Operation(summary = "Изменить продукт", description = "Изменяет продукт из БД по отправленному DTO")
@@ -71,13 +73,10 @@ public class ItemController {
             )
         })
     @PutMapping
-    public ResponseEntity<Void> update(@RequestBody ItemUpdateDto itemUpdateDto) {
-        try {
-            itemService.update(conversionService.convert(itemUpdateDto, Item.class));
-        } catch (ConversionException e) {
-            return ResponseEntity.status(500).build();
-        }
-        return ResponseEntity.noContent().build();
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public Mono<Void> update(@RequestBody ItemUpdateDto itemUpdateDto) {
+        itemService.update(conversionService.convert(itemUpdateDto, Item.class));
+        return Mono.empty();
     }
 
     @Operation(summary = "Удалить продукт", description = "Удалить продукт по id")
@@ -90,12 +89,13 @@ public class ItemController {
             )
         })
     @DeleteMapping
-    public ResponseEntity<Void> delete(
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public Mono<Void> delete(
         @Parameter(description = "ID удаляемого продукта", example = "1", required = true)
         @RequestParam(name="id", required=true) Long itemId
     ) {
         itemService.delete(itemId);
-        return ResponseEntity.noContent().build();
+        return Mono.empty();
     }
 
     @Operation(summary = "Найти продукты", description = "При указании id ищет продукт по id, при неуказании id и указании имени ищет продукт по имени, иначе возвращает список продуктов по указанной странице")
@@ -115,7 +115,7 @@ public class ItemController {
             )
         })
     @GetMapping
-    public ResponseEntity<String> find(
+    public Mono<ResponseEntity<String>> find(
         @Parameter(description = "ID продукта", example = "1", required = false)
         @RequestParam(required=false) Long id,
         @Parameter(description = "Номер страницы (нумерация с 0)", example = "0", required = false)
@@ -141,33 +141,31 @@ public class ItemController {
         }
     }
 
-    public ResponseEntity<String> findAll(Integer pageNumber, Integer pageSize) {
-        List<Item> items = itemService.findAll(pageNumber, pageSize);
-        List<ItemDto> itemsDto = new ArrayList<>();
-        items.forEach((Item it) -> { 
-            itemsDto.add(conversionService.convert(it, ItemDto.class));
-        });
-        return ResponseEntity
-            .ok()
-            .header("X-Total-Count", String.valueOf(itemService.count()))
-            .body(jsonConvService.conv(itemsDto));
+    public Mono<ResponseEntity<String>> findAll(Integer pageNumber, Integer pageSize) {
+        return Mono.zip(
+            itemService.findAll(pageNumber, pageSize)
+            .map((it) -> conversionService.convert(it, ItemDto.class))
+            .collectList(),
+            itemService.count(), (itemsDto, count) ->
+                ResponseEntity.ok()
+                .header("X-Total-Count", String.valueOf(count))
+                .body(jsonConvService.conv(itemsDto))
+            );
     }
 
-    public ResponseEntity<String> findById(Long id) {
-        Item item = itemService.findById(id);
-        return (item == null) 
+    public Mono<ResponseEntity<String>> findById(Long id) {
+        return itemService.findById(id).map((item) -> (item == null) 
             ? ResponseEntity.notFound().build()
             : ResponseEntity.ok(jsonConvService.conv(
                 conversionService.convert(item, ItemDto.class)
-            ));
+            )));
     }
 
-    public ResponseEntity<String> findByName(String name) {
-        Item item = itemService.findByName(name);
-        return (item == null) 
+    public Mono<ResponseEntity<String>> findByName(String name) {
+        return itemService.findByName(name).map((item) -> (item == null) 
             ? ResponseEntity.status(HttpStatus.NOT_FOUND).build()
             : ResponseEntity.ok(jsonConvService.conv(
                 conversionService.convert(item, ItemDto.class)
-            ));
+            )));
     }
 }
