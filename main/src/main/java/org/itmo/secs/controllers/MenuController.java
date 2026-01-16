@@ -76,7 +76,7 @@ public class MenuController {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public Mono<Void> update(@RequestBody MenuDto menuDto) {
         menuService.update(conversionService.convert(menuDto, Menu.class));
-        return Menu.empty();
+        return Mono.empty();
     }
 
     @Operation(summary = "Удалить меню", description = "Удалить меню по id")
@@ -191,9 +191,9 @@ public class MenuController {
         @RequestParam(required=true) Long id
     ) {
         return menuService.makeListOfDishes(id)
-        .map((it) -> {
-            return conversionService.convert(it, DishDto.class);
-        });
+                .map((it) -> {
+                    return conversionService.convert(it, DishDto.class);
+                });
     }
 
     @Operation(summary = "Удалить блюдо из меню", description = "При наличии меню с указанным ip удаляет из него блюдо с указанным id")

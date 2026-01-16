@@ -149,7 +149,7 @@ public class ItemController {
             itemService.count(), (itemsDto, count) ->
                 ResponseEntity.ok()
                 .header("X-Total-Count", String.valueOf(count))
-                .body(jsonConvService.conv(itemsDto));
+                .body(jsonConvService.conv(itemsDto))
             );
     }
 
