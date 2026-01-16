@@ -32,7 +32,7 @@ public class MenuService {
             menuRep.findByMealAndDateAndUserId(
                 menu.getMeal(), 
                 menu.getDate(),
-                menu.getUser_id()
+                menu.getUserId()
             ).orElse(null) != null
         ) {
             throw new DataIntegrityViolationException("Menu with given key already exists");
@@ -46,7 +46,7 @@ public class MenuService {
         findById(menu.getId())
                 .switchIfEmpty(Mono.error(new ItemNotFoundException("Menu with id " + menu.getId() + " was not found")))
                 .flatMap(existingMenu -> {
-                    return findByKey(menu.getMeal(), menu.getDate(), menu.getUser_id())
+                    return findByKey(menu.getMeal(), menu.getDate(), menu.getUserId())
                             .flatMap(foundMenu -> {
                                 if (foundMenu.getId() != menu.getId()) {
                                     return Mono.error(new DataIntegrityViolationException("Menu with given new key already exists"));
@@ -59,7 +59,7 @@ public class MenuService {
                 .flatMap(existingMenu -> {
                     existingMenu.setMeal(menu.getMeal());
                     existingMenu.setDate(menu.getDate());
-                    existingMenu.setUser_id(menu.getUser_id());
+                    existingMenu.setUserId(menu.getUserId());
                     return Mono.fromCallable(() -> menuRep.save(existingMenu));
                 })
                 .then();

@@ -14,9 +14,11 @@ public class DishUpdateDtoToDishConverter implements Converter<DishUpdateNameDto
     private final DishService dishService;
     @Override
     public Dish convert(DishUpdateNameDto dishUpdateNameDto) {
-        Dish ret = dishService.findById(dishUpdateNameDto.id());
-        if (ret == null)
-            throw new ItemNotFoundException("Dish with this id was not found");
+        Dish ret = dishService.findById(dishUpdateNameDto.id())
+                .blockOptional()
+                .orElseThrow(() ->
+                        new ItemNotFoundException("Dish with id " + dishUpdateNameDto.id() + " was not found"));
+
         ret.setName(dishUpdateNameDto.name());
         return ret;
     }

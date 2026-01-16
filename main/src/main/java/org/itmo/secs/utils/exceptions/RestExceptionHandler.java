@@ -6,15 +6,15 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
-import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
+import reactor.core.publisher.Mono;
 
 @RestControllerAdvice
-public class RestExceptionHandler extends ResponseEntityExceptionHandler {
+public class RestExceptionHandler {
 
     @ExceptionHandler({ConstraintViolationException.class})
     @ResponseStatus(HttpStatus.BAD_REQUEST)
-    protected ResponseEntity<Object> handleConstraintViolationException(
+    protected Mono<ResponseEntity<String>> handleConstraintViolationException(
             ConstraintViolationException e) {
-        return new ResponseEntity<>("Длина названия от 3 до 15", HttpStatus.BAD_REQUEST);
+        return Mono.just(new ResponseEntity<>("Длина названия от 3 до 15", HttpStatus.BAD_REQUEST));
     }
 }
