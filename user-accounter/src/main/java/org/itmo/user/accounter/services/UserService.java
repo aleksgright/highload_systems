@@ -1,16 +1,13 @@
-package org.itmo.secs.services;
+package org.itmo.user.accounter.services;
 
-import org.itmo.secs.utils.exceptions.*;
-import org.itmo.secs.repositories.UserRepository;
-import org.itmo.secs.model.entities.User;
+import org.itmo.user.accounter.utils.exceptions.*;
+import org.itmo.user.accounter.repositories.UserRepository;
+import org.itmo.user.accounter.model.entities.User;
 import lombok.AllArgsConstructor;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
-
-import reactor.core.publisher.Mono;
-import reactor.core.publisher.Flux;
 
 @Service
 @AllArgsConstructor

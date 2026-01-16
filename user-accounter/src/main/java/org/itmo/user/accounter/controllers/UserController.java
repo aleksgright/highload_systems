@@ -1,8 +1,8 @@
-package org.itmo.secs.controllers;
+package org.itmo.user.accounter.controllers;
 
-import org.itmo.secs.model.dto.*;
-import org.itmo.secs.model.entities.User;
-import org.itmo.secs.services.UserService;
+import org.itmo.user.accounter.model.dto.*;
+import org.itmo.user.accounter.model.entities.User;
+import org.itmo.user.accounter.services.UserService;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;

@@ -1,6 +1,6 @@
-package org.itmo.secs.repositories;
+package org.itmo.user.accounter.repositories;
 
-import org.itmo.secs.model.entities.User;
+import org.itmo.user.accounter.model.entities.User;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
