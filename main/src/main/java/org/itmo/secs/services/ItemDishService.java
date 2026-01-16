@@ -25,7 +25,7 @@ public class ItemDishService {
     private final DishRepository dishRepository;
 
     @Transactional(isolation=Isolation.SERIALIZABLE)
-    public void updateItemDishCount(Item item, Dish dish, int count) {
+    public Mono<ItemDish> updateItemDishCount(Item item, Dish dish, int count) {
         Optional<ItemDish> itemDishOpt = itemDishRepository.findById_ItemIdAndId_DishId(item.getId(), dish.getId());
         ItemDish persistUnit = new ItemDish();
         if (itemDishOpt.isEmpty()) {
@@ -36,7 +36,7 @@ public class ItemDishService {
             persistUnit = itemDishOpt.get();
             persistUnit.setCount(count);
         }
-        itemDishRepository.save(persistUnit);
+        return Mono.just(itemDishRepository.save(persistUnit));
     }
 
     @Transactional(isolation=Isolation.SERIALIZABLE)

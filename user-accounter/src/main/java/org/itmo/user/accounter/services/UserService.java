@@ -1,6 +1,7 @@
 package org.itmo.user.accounter.services;
 
-import org.itmo.user.accounter.utils.exceptions.*;
+import org.itmo.user.accounter.utils.exceptions.DataIntegrityViolationException;
+import org.itmo.user.accounter.utils.exceptions.ItemNotFoundException;
 import org.itmo.user.accounter.repositories.UserRepository;
 import org.itmo.user.accounter.model.entities.User;
 import lombok.AllArgsConstructor;

@@ -36,16 +36,16 @@ public class UserController {
     @Operation(summary = "Создать нового пользователя", description = "Создается новый пользователь по отправленному DTO")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "201", description = "Пользователь был успешно создан",
-                content = {
-                    @Content(mediaType = "application/json", schema = @Schema(implementation = UserDto.class))
-                }
-            ), 
+                    content = {
+                            @Content(mediaType = "application/json", schema = @Schema(implementation = UserDto.class))
+                    }
+            ),
             @ApiResponse(responseCode = "400", description = "Пользователь с таким же именем уже есть базе",
-                content = {
-                    @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorDto.class))
-                }
+                    content = {
+                            @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorDto.class))
+                    }
             )
-        })
+    })
     @PostMapping
     public ResponseEntity<UserDto> create(@RequestBody UserCreateDto userDto) {
         User user = new User();
@@ -59,18 +59,18 @@ public class UserController {
 
     @Operation(summary = "Изменить пользователя", description = "Изменяет пользователя из БД по отправленному DTO")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "204", description = "Успешно изменен"), 
+            @ApiResponse(responseCode = "204", description = "Успешно изменен"),
             @ApiResponse(responseCode = "400", description = "Пользователь с именем из DTO уже существует",
-                content = {
-                    @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorDto.class))
-                }
+                    content = {
+                            @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorDto.class))
+                    }
             ),
             @ApiResponse(responseCode = "404", description = "Блюдо с id из DTO не было найдено",
-                content = {
-                    @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorDto.class))
-                }
+                    content = {
+                            @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorDto.class))
+                    }
             )
-        })
+    })
     @PutMapping
     public ResponseEntity<Void> update(@RequestBody UserDto userDto) {
         userService.update(new User(userDto.id(), userDto.name()));
@@ -81,15 +81,15 @@ public class UserController {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "204", description = "Успшено удален"),
             @ApiResponse(responseCode = "404", description = "Пользователь с отправленным id не был найден",
-                content = {
-                    @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorDto.class))
-                }
+                    content = {
+                            @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorDto.class))
+                    }
             )
-        })
+    })
     @DeleteMapping
     public ResponseEntity<Void> delete(
-        @Parameter(description = "ID удаляемого пользователя", example = "1", required = true)
-        @RequestParam(required=true) long id
+            @Parameter(description = "ID удаляемого пользователя", example = "1", required = true)
+            @RequestParam(required=true) long id
     ) {
         userService.deleteById(id);
         return ResponseEntity.noContent().build();
@@ -98,36 +98,36 @@ public class UserController {
     @Operation(summary = "Найти пользователя", description = "При указании id ищет пользователя по id, при указании имени ищет пользователя по имени")
     @ApiResponses(value = {
             @ApiResponse(
-                responseCode = "200", 
-                description = "Содержит найденного пользователя",
-                content = {
-                    @Content(mediaType = "application/json", schema = @Schema(implementation = UserDto.class))
-                }
+                    responseCode = "200",
+                    description = "Содержит найденного пользователя",
+                    content = {
+                            @Content(mediaType = "application/json", schema = @Schema(implementation = UserDto.class))
+                    }
             ),
             @ApiResponse(responseCode = "400", description = "Ни ID, ни имя для поиска не были указаны"),
             @ApiResponse(responseCode = "404", description = "Пользователь с указанным ID или именем не был найдено",
-                content = {
-                    @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorDto.class))
-                }
+                    content = {
+                            @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorDto.class))
+                    }
             )
-        })
+    })
     @GetMapping
     public ResponseEntity<UserDto> find(
-        @Parameter(description = "ID пользователя", example = "1", required = false)
-        @RequestParam(required=false) Long id,
-        @Parameter(description = "Имя пользователя", example = "Олежка", required = false)
-        @RequestParam(required=false) String name
+            @Parameter(description = "ID пользователя", example = "1", required = false)
+            @RequestParam(required=false) Long id,
+            @Parameter(description = "Имя пользователя", example = "Олежка", required = false)
+            @RequestParam(required=false) String name
     ) {
         if (id != null) {
             User user = userService.findById(id);
             return (user != null)
-            ? ResponseEntity.ok().body(conversionService.convert(user, UserDto.class))
-            : ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+                    ? ResponseEntity.ok().body(conversionService.convert(user, UserDto.class))
+                    : ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         } else if (name != null) {
             User user = userService.findByName(name);
             return (user != null)
-            ? ResponseEntity.ok().body(conversionService.convert(user, UserDto.class))
-            : ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+                    ? ResponseEntity.ok().body(conversionService.convert(user, UserDto.class))
+                    : ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         } else {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
         }

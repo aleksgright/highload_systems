@@ -29,11 +29,11 @@ public class MenuService {
     @Transactional(isolation=Isolation.SERIALIZABLE)
     public Mono<Menu> save(Menu menu) {
         if (
-            menuRep.findByMealAndDateAndUserId(
-                menu.getMeal(), 
-                menu.getDate(),
-                menu.getUser_id()
-            ).orElse(null) != null
+                menuRep.findByMealAndDateAndUserId(
+                        menu.getMeal(),
+                        menu.getDate(),
+                        menu.getUser_id()
+                ).orElse(null) != null
         ) {
             throw new DataIntegrityViolationException("Menu with given key already exists");
         }
@@ -90,14 +90,14 @@ public class MenuService {
         }
 
         dishService.findById(dishId)
-        .switchIfEmpty(Mono.error(new ItemNotFoundException("Dish with id " + dishId + " was not found")))
-        .map((dish) -> {
-            dish.getMenus().add(menu);
-            menu.getDishes().add(dish);
-            dishService.save(dish).subscribe();
-            save(menu).subscribe();
-            return dish;
-        }).subscribe();
+                .switchIfEmpty(Mono.error(new ItemNotFoundException("Dish with id " + dishId + " was not found")))
+                .map((dish) -> {
+                    dish.getMenus().add(menu);
+                    menu.getDishes().add(dish);
+                    dishService.save(dish).subscribe();
+                    save(menu).subscribe();
+                    return dish;
+                }).subscribe();
     }
 
     @Transactional(isolation=Isolation.SERIALIZABLE)
@@ -135,7 +135,7 @@ public class MenuService {
     public Flux<Dish> makeListOfDishes(Long menuId) {
         Menu menu = menuRep.findById(menuId).orElse(null);
         if (menu == null) {
-            throw new ItemNotFoundException("Menu with id " + menuId.toString() + " was not found");
+            throw new ItemNotFoundException("Menu with id " + menuId + " was not found");
         }
 
         return Flux.fromIterable(new ArrayList<>(menu.getDishes()));

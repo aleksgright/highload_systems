@@ -11,6 +11,6 @@ import org.springframework.stereotype.Component;
 public class MenuToMenuDtoConvertor implements Converter<Menu, MenuDto> {
     @Override
     public MenuDto convert(Menu menu) {
-        return new MenuDto(menu.getId(), menu.getDate(), (menu.getUser() == null) ? null : menu.getUser().getId(), menu.getMeal().toString());
+        return new MenuDto(menu.getId(), menu.getDate(), (menu.getUser_id() == null) ? null : menu.getUser_id(), menu.getMeal().toString());
     }
 }
