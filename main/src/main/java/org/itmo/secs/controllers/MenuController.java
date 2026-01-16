@@ -24,6 +24,9 @@ import org.springframework.http.ResponseEntity;
 
 import lombok.AllArgsConstructor;
 
+import reactor.core.publisher.Mono;
+import reactor.core.publisher.Flux;
+
 @AllArgsConstructor
 @RestController
 @RequestMapping(value = "menu")
@@ -49,13 +52,10 @@ public class MenuController {
             )
         })
     @PostMapping
-    public ResponseEntity<MenuDto> create(@RequestBody MenuCreateDto menuDto) {
-        Menu menu = conversionService.convert(menuDto, Menu.class);
-        return new ResponseEntity<>(
-                conversionService.convert(
-                        menuService.save(menu),
-                        MenuDto.class),
-                HttpStatus.CREATED);
+    @ResponseStatus(HttpStatus.CREATED)
+    public Mono<MenuDto> create(@RequestBody MenuCreateDto menuDto) {
+        return menuService.save(conversionService.convert(menuDto, Menu.class))
+                .map((menu) -> conversionService.convert(menu, MenuDto.class));
     }
 
     @Operation(summary = "Изменить меню", description = "Изменяет меню из БД по отправленному DTO")
@@ -73,10 +73,10 @@ public class MenuController {
             )
         })
     @PutMapping
-    public ResponseEntity<MenuDto> update(@RequestBody MenuDto menuDto) {
-        Menu menu = conversionService.convert(menuDto, Menu.class);
-        menuService.update(menu);
-        return ResponseEntity.noContent().build();
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public Mono<Void> update(@RequestBody MenuDto menuDto) {
+        menuService.update(conversionService.convert(menuDto, Menu.class));
+        return Menu.empty();
     }
 
     @Operation(summary = "Удалить меню", description = "Удалить меню по id")
@@ -89,12 +89,13 @@ public class MenuController {
             )
         })
     @DeleteMapping
-    public ResponseEntity<Void> delete(
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public Mono<Void> delete(
         @Parameter(description = "ID удаляемого меню", example = "1", required = true)
         @RequestParam(name="id", required=true) Long menuId
     ) {
         menuService.delete(menuId);
-        return ResponseEntity.noContent().build();
+        return Mono.empty();
     }
 
     @Operation(summary = "Найти меню", description = "При указании id ищет продукт по id, иначе возвращает список продуктов по указанной странице")
@@ -114,7 +115,7 @@ public class MenuController {
             )
         })
     @GetMapping
-    public ResponseEntity<String> find(
+    public Mono<ResponseEntity<String>> find(
         @Parameter(description = "ID продукта", example = "1", required = false)
         @RequestParam(required=false) Long id,
         @Parameter(description = "Номер страницы (нумерация с 0)", example = "0", required = false)
@@ -135,27 +136,19 @@ public class MenuController {
         }
     }
 
-    public ResponseEntity<String> findAll(Integer pageNumber, Integer pageSize) {
-        List<Menu> menus = menuService.findAll(pageNumber, pageSize);
-        List<MenuDto> menusDto = new ArrayList<>();
-        menus.forEach((Menu it) -> { 
-            menusDto.add(conversionService.convert(it, MenuDto.class));
-        });
-        return ResponseEntity.ok(jsonConvService.conv(menusDto));
+    public Mono<ResponseEntity<String>> findAll(Integer pageNumber, Integer pageSize) {
+        return menuService.findAll(pageNumber, pageSize)
+        .map((it) -> conversionService.convert(it, MenuDto.class))
+        .collectList()
+        .map(menusDto -> ResponseEntity.ok(jsonConvService.conv(menusDto)));
     }
 
-    public ResponseEntity<String> findById(Long id) {
-        Menu menu = menuService.findById(id);
-        if (menu != null) {
-            System.out.println(jsonConvService.conv(
+    public Mono<ResponseEntity<String>> findById(Long id) {
+        return menuService.findById(id)
+        .map(menu -> ResponseEntity.ok(jsonConvService.conv(
                 conversionService.convert(menu, MenuDto.class)
-            ));
-        }
-        return (menu == null) 
-            ? ResponseEntity.notFound().build()
-            : ResponseEntity.ok(jsonConvService.conv(
-                conversionService.convert(menu, MenuDto.class)
-            ));
+            )))
+        .switchIfEmpty(Mono.just(ResponseEntity.notFound().build()));
     }
 
     @Operation(summary = "Добавляет блюдо в меню, если оно еще не было в нем", description = "При наличии меню с указанным ip в базе, добавляет в него блюдо")
@@ -171,9 +164,10 @@ public class MenuController {
             )
         })
     @PutMapping("/dishes")
-    public ResponseEntity<Void> addDish(@RequestBody MenuDishDto dto) {
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public Mono<Void> addDish(@RequestBody MenuDishDto dto) {
         menuService.includeDishToMenu(dto.dishId(), dto.menuId());
-        return ResponseEntity.noContent().build();
+        return Mono.empty();
     }
 
     @Operation(summary = "Получить список блюд в составе меню", description = "При наличии меню с указанным ip в базе возвращает список блюд в нем")
@@ -192,19 +186,14 @@ public class MenuController {
             )
         })
     @GetMapping("/dishes")
-    public ResponseEntity<String> getDishes(
+    public Flux<DishDto> getDishes(
         @Parameter(description = "ID меню", example = "1", required = true)
         @RequestParam(required=true) Long id
     ) {
-        List<Dish> dishes = menuService.makeListOfDishes(id);
-
-        List<DishDto> dishesDto = new ArrayList<>();
-
-        dishes.forEach((Dish it) -> {
-            dishesDto.add(conversionService.convert(it, DishDto.class));
+        return menuService.makeListOfDishes(id)
+        .map((it) -> {
+            return conversionService.convert(it, DishDto.class);
         });
-
-        return ResponseEntity.ok(jsonConvService.conv(dishesDto));
     }
 
     @Operation(summary = "Удалить блюдо из меню", description = "При наличии меню с указанным ip удаляет из него блюдо с указанным id")
@@ -220,8 +209,9 @@ public class MenuController {
             )
         })
     @DeleteMapping("/dishes")
-    public ResponseEntity<Void> deleteDish(@RequestBody MenuDishDto dto) {
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public Mono<Void> deleteDish(@RequestBody MenuDishDto dto) {
         menuService.deleteDishFromMenu(dto.dishId(), dto.menuId());
-        return ResponseEntity.noContent().build();
+        return Mono.empty();
     }
 }

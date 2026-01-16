@@ -90,7 +90,7 @@ public class ItemController {
         })
     @DeleteMapping
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public ResponseEntity<Void> delete(
+    public Mono<Void> delete(
         @Parameter(description = "ID удаляемого продукта", example = "1", required = true)
         @RequestParam(name="id", required=true) Long itemId
     ) {
