@@ -41,8 +41,8 @@ public class DishService {
         }
 
         itemService.findById(itemId)
-                .switchIfEmpty(Mono.error(new ItemNotFoundException("Item with id " + itemId + " was not found")))
-                .subscribe(item -> itemDishService.updateItemDishCount(item, dish, count));
+        .switchIfEmpty(Mono.error(new ItemNotFoundException("Item with id " + itemId + " was not found")))
+        .subscribe(item -> itemDishService.updateItemDishCount(item, dish, count));
     }
 
     @Transactional(isolation=Isolation.SERIALIZABLE)
@@ -54,15 +54,15 @@ public class DishService {
         }
 
         itemService.findById(itemId)
-                .switchIfEmpty(Mono.error(new ItemNotFoundException("Item with id " + itemId + " was not found")))
-                .map(item -> itemDishService.delete(item, dish)).subscribe();
+        .switchIfEmpty(Mono.error(new ItemNotFoundException("Item with id " + itemId + " was not found")))
+        .map(item -> itemDishService.delete(item, dish)).subscribe();
     }
 
     @Transactional(isolation=Isolation.SERIALIZABLE)
     public void updateName(Dish dish) {
         findById(dish.getId())
-                .switchIfEmpty(Mono.error(new ItemNotFoundException("Dish with id " + dish.getId() + " was not found")))
-                .map(x -> dishRepository.save(dish)).subscribe();
+        .switchIfEmpty(Mono.error(new ItemNotFoundException("Dish with id " + dish.getId() + " was not found")))
+        .map(x -> dishRepository.save(dish)).subscribe();
     }
 
     public Mono<Dish> findById(Long id) {
@@ -86,7 +86,7 @@ public class DishService {
     @Transactional(isolation=Isolation.SERIALIZABLE)
     public Flux<Pair<Item, Integer>> makeListOfItems(Long dishId) {
         return itemDishService.findAllByDishId(dishId)
-                .map((itemDish) -> Pair.of(itemDish.getItem(), itemDish.getCount()));
+        .map((itemDish) -> Pair.of(itemDish.getItem(), itemDish.getCount()));
     }
 
     public Flux<Dish> findAll(int page, int size) {

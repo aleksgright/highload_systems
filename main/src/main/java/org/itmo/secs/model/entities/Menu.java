@@ -35,7 +35,7 @@ public class Menu {
     @NotNull
     private LocalDate date;
     
-    private Long user_id;
+    private Long userId;
 
     @NotNull
     @Enumerated(EnumType.STRING)

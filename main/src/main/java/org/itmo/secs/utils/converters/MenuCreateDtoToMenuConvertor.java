@@ -5,6 +5,7 @@ import lombok.AllArgsConstructor;
 import org.itmo.secs.model.dto.*;
 import org.itmo.secs.model.entities.*;
 import org.itmo.secs.model.entities.enums.Meal;
+import org.itmo.secs.services.UserService;
 import org.itmo.secs.utils.exceptions.DataIntegrityViolationException;
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.stereotype.Component;
@@ -14,12 +15,13 @@ import org.springframework.transaction.annotation.Transactional;
 @Component
 @AllArgsConstructor
 public class MenuCreateDtoToMenuConvertor implements Converter<MenuCreateDto, Menu> {
+    private final UserService userService;
     @Transactional(isolation=Isolation.SERIALIZABLE)
     @Override
     public Menu convert(MenuCreateDto menuDto) {
         Menu menu = new Menu();
 
-        menu.setUser_id(menuDto.userId());
+        menu.setUserId(menuDto.userId());
         menu.setDate(menuDto.date());
         try {
             menu.setMeal(Meal.valueOf(menuDto.meal().trim().toUpperCase()));
