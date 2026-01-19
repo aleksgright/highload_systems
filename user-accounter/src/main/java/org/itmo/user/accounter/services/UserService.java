@@ -9,44 +9,48 @@ import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
+import reactor.core.publisher.Mono;
 
 @Service
 @AllArgsConstructor
 public class UserService {
     private UserRepository userRep;
 
-    public User save(User user) {
-        if (findByName(user.getName()) != null) {
-            throw new DataIntegrityViolationException("User with name " + user.getName() + " already exist");
-        }
-        return userRep.save(user);
+    @Transactional(isolation = Isolation.SERIALIZABLE)
+    public Mono<User> save(User user) {
+        return Mono.fromCallable(() -> userRep.findByName(user.getName()))
+                .flatMap(optionalUser -> {
+                    if (optionalUser.isPresent()) {
+                        return Mono.error(new DataIntegrityViolationException("User with name " + user.getName() + " already exists"));
+                    }
+                    return Mono.fromCallable(() -> userRep.save(user));
+                });
     }
 
-    @Transactional(isolation=Isolation.SERIALIZABLE)
-    public void update(User user) {
-        User old = findById(user.getId());
-        if (old == null) {
-            throw new ItemNotFoundException("User with id " + user.getId() + " was not found");
-        }
-        old.setName(user.getName());
-        userRep.save(old);
+    @Transactional(isolation = Isolation.SERIALIZABLE)
+    public Mono<User> update(User user) {
+        return findById(user.getId())
+                .switchIfEmpty(Mono.error(new ItemNotFoundException("User with id " + user.getId() + " was not found")))
+                .flatMap(existingUser -> {
+                    existingUser.setName(user.getName());
+                    return Mono.fromCallable(() -> userRep.save(existingUser));
+                });
     }
 
-    @Transactional(isolation=Isolation.SERIALIZABLE)
-    public void deleteById(Long id) {
-        User user = findById(id);
-        if (user == null) {
-            throw new ItemNotFoundException("User with id " + id.toString() + " was not found");
-        }
-
-        userRep.deleteById(id);
+    @Transactional(isolation = Isolation.SERIALIZABLE)
+    public Mono<Void> deleteById(Long id) {
+        return findById(id)
+                .switchIfEmpty(Mono.error(new ItemNotFoundException("User with id " + id + " was not found")))
+                .flatMap(user -> Mono.fromRunnable(() -> userRep.deleteById(id)));
     }
 
-    public User findByName(String name) {
-        return userRep.findByName(name).orElse(null);
+    public Mono<User> findByName(String name) {
+        return Mono.fromCallable(() -> userRep.findByName(name))
+                .flatMap(optionalUser -> optionalUser.map(Mono::just).orElse(Mono.empty()));
     }
 
-    public User findById(Long id) {
-        return userRep.findById(id).orElse(null);
+    public Mono<User> findById(Long id) {
+        return Mono.fromCallable(() -> userRep.findById(id))
+                .flatMap(optionalUser -> optionalUser.map(Mono::just).orElse(Mono.empty()));
     }
 }

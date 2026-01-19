@@ -3,14 +3,7 @@ package org.itmo.user.accounter.controllers;
 import org.itmo.user.accounter.model.dto.*;
 import org.itmo.user.accounter.model.entities.User;
 import org.itmo.user.accounter.services.UserService;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import io.swagger.v3.oas.annotations.*;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -24,6 +17,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
 import lombok.AllArgsConstructor;
+import reactor.core.publisher.Mono;
 
 @AllArgsConstructor
 @RestController
@@ -47,14 +41,13 @@ public class UserController {
             )
     })
     @PostMapping
-    public ResponseEntity<UserDto> create(@RequestBody UserCreateDto userDto) {
+    public Mono<ResponseEntity<UserDto>> create(@RequestBody UserCreateDto userDto) {
         User user = new User();
         user.setName(userDto.name());
-        return new ResponseEntity<>(
-                conversionService.convert(
-                        userService.save(user),
-                        UserDto.class),
-                HttpStatus.CREATED);
+
+        return userService.save(user)
+                .map(savedUser -> conversionService.convert(savedUser, UserDto.class))
+                .map(dto -> ResponseEntity.status(HttpStatus.CREATED).body(dto));
     }
 
     @Operation(summary = "Изменить пользователя", description = "Изменяет пользователя из БД по отправленному DTO")
@@ -65,16 +58,19 @@ public class UserController {
                             @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorDto.class))
                     }
             ),
-            @ApiResponse(responseCode = "404", description = "Блюдо с id из DTO не было найдено",
+            @ApiResponse(responseCode = "404", description = "Пользователь с id из DTO не был найден",
                     content = {
                             @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorDto.class))
                     }
             )
     })
     @PutMapping
-    public ResponseEntity<Void> update(@RequestBody UserDto userDto) {
-        userService.update(new User(userDto.id(), userDto.name()));
-        return ResponseEntity.ok().build();
+    public Mono<ResponseEntity<Void>> update(@RequestBody UserDto userDto) {
+        User user = new User(userDto.id(), userDto.name());
+
+        return userService.update(user)
+                .map(updatedUser -> ResponseEntity.ok().<Void>build())
+                .defaultIfEmpty(ResponseEntity.notFound().build());
     }
 
     @Operation(summary = "Удалить пользователя", description = "Удалить пользователя по id")
@@ -87,12 +83,12 @@ public class UserController {
             )
     })
     @DeleteMapping
-    public ResponseEntity<Void> delete(
+    public Mono<ResponseEntity<Void>> delete(
             @Parameter(description = "ID удаляемого пользователя", example = "1", required = true)
             @RequestParam(required=true) long id
     ) {
         userService.deleteById(id);
-        return ResponseEntity.noContent().build();
+        return Mono.empty();
     }
 
     @Operation(summary = "Найти пользователя", description = "При указании id ищет пользователя по id, при указании имени ищет пользователя по имени")
@@ -112,24 +108,24 @@ public class UserController {
             )
     })
     @GetMapping
-    public ResponseEntity<UserDto> find(
+    public Mono<ResponseEntity<UserDto>> find(
             @Parameter(description = "ID пользователя", example = "1", required = false)
             @RequestParam(required=false) Long id,
             @Parameter(description = "Имя пользователя", example = "Олежка", required = false)
             @RequestParam(required=false) String name
     ) {
         if (id != null) {
-            User user = userService.findById(id);
-            return (user != null)
-                    ? ResponseEntity.ok().body(conversionService.convert(user, UserDto.class))
-                    : ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+            return userService.findById(id)
+                    .map(user -> conversionService.convert(user, UserDto.class))
+                    .map(dto -> ResponseEntity.ok().body(dto))
+                    .defaultIfEmpty(ResponseEntity.status(HttpStatus.NOT_FOUND).build());
         } else if (name != null) {
-            User user = userService.findByName(name);
-            return (user != null)
-                    ? ResponseEntity.ok().body(conversionService.convert(user, UserDto.class))
-                    : ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+            return userService.findByName(name)
+                    .map(user -> conversionService.convert(user, UserDto.class))
+                    .map(dto -> ResponseEntity.ok().body(dto))
+                    .defaultIfEmpty(ResponseEntity.status(HttpStatus.NOT_FOUND).build());
         } else {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+            return Mono.just(ResponseEntity.status(HttpStatus.BAD_REQUEST).build());
         }
     }
 }
