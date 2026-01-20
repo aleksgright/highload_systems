@@ -5,5 +5,5 @@ RUN ./gradlew clean build -x test
 
 FROM amazoncorretto:21 as runner
 WORKDIR /app
-COPY --from=build /config-server/src/build/libs/*.jar user-accounter.jar
-ENTRYPOINT ["java","-jar","user-accounter.jar"]
+COPY --from=build /config-server/src/build/libs/*.jar config-server.jar
+ENTRYPOINT ["java","-jar","config-server.jar"]

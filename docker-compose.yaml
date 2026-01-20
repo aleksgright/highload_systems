@@ -1,4 +1,18 @@
 services:
+  config-server:
+    build: ./config-server
+    container_name: config-server
+    ports:
+      - "8888:8888"
+    networks:
+      - highload-network
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8888/actuator/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
   highload-db:
     image: postgres:15-alpine
     container_name: highload-db
@@ -12,14 +26,11 @@ services:
       - highload_db_data:/var/lib/postgresql/data
     networks:
       - highload-network
-
-  config-server:
-    build: ./config-server
-    container_name: config-server
-    ports:
-      - "8888:8888"
-    networks:
-      - highload-network
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres -d highload" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   eureka-server:
     build: ./eureka-server
@@ -29,8 +40,16 @@ services:
     networks:
       - highload-network
     depends_on:
-      - highload-db
-      - config-server
+      highload-db:
+        condition: service_healthy
+      config-server:
+        condition: service_healthy
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8761/actuator/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
 
   gateway:
     build: ./gateway
@@ -38,8 +57,10 @@ services:
     ports:
       - "8080:8080"
     depends_on:
-      - config-server
-      - eureka-server
+      config-server:
+        condition: service_healthy
+      eureka-server:
+        condition: service_healthy
     networks:
       - highload-network
 
@@ -53,13 +74,16 @@ services:
     ports:
       - "8082:8082"
     depends_on:
-      - highload-db
-      - config-server
-      - eureka-server
+      highload-db:
+        condition: service_healthy
+      config-server:
+        condition: service_healthy
+      eureka-server:
+        condition: service_healthy
     networks:
       - highload-network
 
-  user-service:
+  user-accounter:
     build: ./user-accounter
     container_name: highload-user-accounter
     networks:
