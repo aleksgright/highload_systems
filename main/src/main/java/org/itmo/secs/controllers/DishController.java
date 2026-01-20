@@ -123,7 +123,7 @@ public class DishController {
             .header("Content-Type", "application/json")
             .body(jsonConvService.conv(conversionService.convert(dish, DishDto.class)))
         )
-        .switchIfEmpty(Mono.just(new ResponseEntity<>(null, HttpStatus.NOT_FOUND)));
+        .switchIfEmpty(Mono.just(new ResponseEntity<>((String) null, HttpStatus.NOT_FOUND)));
     }
 
     public Mono<ResponseEntity<String>> findByName(String name) {
@@ -132,7 +132,7 @@ public class DishController {
             .header("Content-Type", "application/json")
             .body(jsonConvService.conv(conversionService.convert(dish, DishDto.class)))
         )
-        .switchIfEmpty(Mono.just(new ResponseEntity<>(null, HttpStatus.NOT_FOUND)));
+        .switchIfEmpty(Mono.just(new ResponseEntity<>((String) null, HttpStatus.NOT_FOUND)));
     }
 
     public Mono<ResponseEntity<String>> findAll(Integer pageNumber, Integer pageSize) {
