@@ -13,6 +13,20 @@ services:
     networks:
       - highload-network
 
+  user-accounter-db:
+    image: postgres:15-alpine
+    container_name: user-accounter-db
+    environment:
+      POSTGRES_DB: user-accounter
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+    ports:
+      - "5433:5432"
+    volumes:
+      - user_accounter_db_data:/var/lib/postgresql/data
+    networks:
+      - highload-network
+
   config-server:
     build: ./config-server
     container_name: config-server
@@ -73,6 +87,8 @@ services:
 
 volumes:
   highload_db_data:
+
+  user_accounter_db_data:
 
 networks:
   highload-network:
