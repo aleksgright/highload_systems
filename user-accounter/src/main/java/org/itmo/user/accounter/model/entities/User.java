@@ -2,12 +2,9 @@ package org.itmo.user.accounter.model.entities;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
-@Entity
+@Data
 @Table(name = "users")
 @Getter
 @Setter
