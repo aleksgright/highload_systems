@@ -21,8 +21,6 @@ import reactor.core.publisher.Flux;
 @AllArgsConstructor
 public class ItemDishService {
     private final ItemDishRepository itemDishRepository;
-    private final ItemService itemService;
-    private final DishRepository dishRepository;
 
     @Transactional(isolation=Isolation.SERIALIZABLE)
     public Mono<ItemDish> updateItemDishCount(Item item, Dish dish, int count) {

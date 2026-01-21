@@ -34,10 +34,11 @@ public class ItemService {
     }
     
     @Transactional(isolation=Isolation.SERIALIZABLE)
-    public void update(Item item) {
+    public Mono<Void> update(Item item) {
         findById(item.getId())
             .switchIfEmpty(Mono.error(new ItemNotFoundException("Item with id " + item.getId() + " was not found"))) 
             .map(x -> itemRepository.save(item)).subscribe();
+        return Mono.empty();
     }
 
     public Mono<Item> findById(Long id) {
@@ -60,10 +61,11 @@ public class ItemService {
     }
 
     @Transactional(isolation=Isolation.SERIALIZABLE)
-    public void delete(Long id) {
+    public Mono<Void> delete(Long id) {
         if (itemRepository.findById(id).isEmpty()) {
             throw new ItemNotFoundException("Item with id " + id + " was not found");
         }
         itemRepository.deleteById(id);
+        return Mono.empty();
     }
 }

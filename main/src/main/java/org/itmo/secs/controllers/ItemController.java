@@ -72,8 +72,7 @@ public class ItemController {
     @PutMapping
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public Mono<Void> update(@RequestBody ItemUpdateDto itemUpdateDto) {
-        itemService.update(Objects.requireNonNull(conversionService.convert(itemUpdateDto, Item.class)));
-        return Mono.empty();
+        return itemService.update(Objects.requireNonNull(conversionService.convert(itemUpdateDto, Item.class)));
     }
 
     @Operation(summary = "Удалить продукт", description = "Удалить продукт по id")
@@ -91,8 +90,7 @@ public class ItemController {
         @Parameter(description = "ID удаляемого продукта", example = "1", required = true)
         @RequestParam(name="id") Long itemId
     ) {
-        itemService.delete(itemId);
-        return Mono.empty();
+        return itemService.delete(itemId);
     }
 
     @Operation(summary = "Найти продукты", description = "При указании id ищет продукт по id, при неуказании id и указании имени ищет продукт по имени, иначе возвращает список продуктов по указанной странице")
