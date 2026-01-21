@@ -1,9 +1,22 @@
 FROM gradle:jdk21 as build
-COPY . /eureka-server/src
-WORKDIR /eureka-server/src
-RUN ./gradlew clean build -x test
+WORKDIR /eureka-server
 
-FROM amazoncorretto:21 as runner
+# 1️⃣ Copy Gradle metadata only
+COPY build.gradle.kts ./
+COPY gradle gradle
+
+# 2️⃣ Warm dependency + plugin cache
+RUN --mount=type=cache,id=gradle-cache-eureka,target=/home/gradle/.gradle \
+    gradle help --no-daemon
+
+# 3️⃣ Copy source code
+COPY src src
+
+# 4️⃣ Build (FAST)
+RUN --mount=type=cache,id=gradle-cache-eureka,target=/home/gradle/.gradle \
+    gradle build -x test --no-daemon
+
+FROM amazoncorretto:21
 WORKDIR /app
-COPY --from=build /eureka-server/src/build/libs/*.jar user-accounter.jar
-ENTRYPOINT ["java","-jar","user-accounter.jar"]
+COPY --from=build /eureka-server/build/libs/*.jar eureka-server.jar
+ENTRYPOINT ["java","-jar","eureka-server.jar"]

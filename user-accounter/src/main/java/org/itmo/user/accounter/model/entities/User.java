@@ -1,13 +1,11 @@
 package org.itmo.user.accounter.model.entities;
 
-import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.relational.core.mapping.Table;
 
-@Entity
+@Data
 @Table(name = "users")
 @Getter
 @Setter
@@ -15,10 +13,8 @@ import lombok.Setter;
 @NoArgsConstructor
 public class User {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @NotNull
-    @Column(unique = true)
     private String name;
 }

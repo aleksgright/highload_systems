@@ -2,7 +2,6 @@ package org.itmo.secs.services;
 
 import lombok.AllArgsConstructor;
 
-import java.util.List;
 
 import org.itmo.secs.model.entities.Item;
 import org.itmo.secs.repositories.ItemRepository;
@@ -23,11 +22,15 @@ public class ItemService {
 
     @Transactional(isolation=Isolation.SERIALIZABLE)
     public Mono<Item> save(Item item) {
-        if (findByName(item.getName()) != null) {
-            throw new DataIntegrityViolationException("Item with name " + item.getName() + " already exist");
-        }
-        
-        return Mono.just(itemRepository.save(item));
+        return findByName(item.getName())
+                .hasElement()
+                .flatMap(x -> {
+                    if (x) {
+                        return Mono.error(new DataIntegrityViolationException("Item with name " + item.getName() + " already exist"));
+                    } else {
+                        return Mono.just(itemRepository.save(item));
+                    }
+                });
     }
     
     @Transactional(isolation=Isolation.SERIALIZABLE)
@@ -59,7 +62,7 @@ public class ItemService {
     @Transactional(isolation=Isolation.SERIALIZABLE)
     public void delete(Long id) {
         if (itemRepository.findById(id).isEmpty()) {
-            throw new ItemNotFoundException("Item with id " + id.toString() + " was not found");
+            throw new ItemNotFoundException("Item with id " + id + " was not found");
         }
         itemRepository.deleteById(id);
     }

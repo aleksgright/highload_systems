@@ -9,9 +9,10 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import jakarta.validation.ConstraintViolationException;
+import org.springframework.web.reactive.result.method.annotation.ResponseEntityExceptionHandler;
 
 @RestControllerAdvice
-public class ExceptionTranslator {
+public class ExceptionTranslator extends ResponseEntityExceptionHandler {
     @ExceptionHandler(ItemNotFoundException.class)
     @ResponseStatus(HttpStatus.NOT_FOUND)
     @ResponseBody

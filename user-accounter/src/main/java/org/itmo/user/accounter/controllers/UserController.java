@@ -19,6 +19,8 @@ import org.springframework.http.ResponseEntity;
 import lombok.AllArgsConstructor;
 import reactor.core.publisher.Mono;
 
+import java.util.Objects;
+
 @AllArgsConstructor
 @RestController
 @RequestMapping(value = "user")
@@ -46,7 +48,7 @@ public class UserController {
         user.setName(userDto.name());
 
         return userService.save(user)
-                .map(savedUser -> conversionService.convert(savedUser, UserDto.class))
+                .map(savedUser -> Objects.requireNonNull(conversionService.convert(savedUser, UserDto.class)))
                 .map(dto -> ResponseEntity.status(HttpStatus.CREATED).body(dto));
     }
 
@@ -83,12 +85,11 @@ public class UserController {
             )
     })
     @DeleteMapping
-    public Mono<ResponseEntity<Void>> delete(
+    public Mono<Void> delete(
             @Parameter(description = "ID удаляемого пользователя", example = "1", required = true)
-            @RequestParam(required=true) long id
+            @RequestParam() long id
     ) {
-        userService.deleteById(id);
-        return Mono.empty();
+        return userService.deleteById(id);
     }
 
     @Operation(summary = "Найти пользователя", description = "При указании id ищет пользователя по id, при указании имени ищет пользователя по имени")
@@ -109,19 +110,19 @@ public class UserController {
     })
     @GetMapping
     public Mono<ResponseEntity<UserDto>> find(
-            @Parameter(description = "ID пользователя", example = "1", required = false)
+            @Parameter(description = "ID пользователя", example = "1")
             @RequestParam(required=false) Long id,
-            @Parameter(description = "Имя пользователя", example = "Олежка", required = false)
+            @Parameter(description = "Имя пользователя", example = "Олежка")
             @RequestParam(required=false) String name
     ) {
         if (id != null) {
             return userService.findById(id)
-                    .map(user -> conversionService.convert(user, UserDto.class))
+                    .map(user -> Objects.requireNonNull(conversionService.convert(user, UserDto.class)))
                     .map(dto -> ResponseEntity.ok().body(dto))
                     .defaultIfEmpty(ResponseEntity.status(HttpStatus.NOT_FOUND).build());
         } else if (name != null) {
             return userService.findByName(name)
-                    .map(user -> conversionService.convert(user, UserDto.class))
+                    .map(user -> Objects.requireNonNull(conversionService.convert(user, UserDto.class)))
                     .map(dto -> ResponseEntity.ok().body(dto))
                     .defaultIfEmpty(ResponseEntity.status(HttpStatus.NOT_FOUND).build());
         } else {

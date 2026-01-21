@@ -7,6 +7,7 @@ import org.itmo.secs.services.ItemService;
 import org.itmo.secs.utils.exceptions.ItemNotFoundException;
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.stereotype.Component;
+import reactor.core.publisher.Mono;
 
 @Component
 @AllArgsConstructor
@@ -15,16 +16,16 @@ public class ItemUpdateDtoToItemConverter implements Converter<ItemUpdateDto, It
 
     @Override
     public Item convert(ItemUpdateDto itemUpdateDto) {
-        Item ret = itemService.findById(itemUpdateDto.id())
-                .blockOptional()
-                .orElseThrow(() ->
-                        new ItemNotFoundException("Item with id " + itemUpdateDto.id() + " was not found"));
-
-        ret.setName(itemUpdateDto.name());
-        ret.setCalories(itemUpdateDto.calories());
-        ret.setCarbs(itemUpdateDto.carbs());
-        ret.setProtein(itemUpdateDto.protein());
-        ret.setFats(itemUpdateDto.fats());
+        Item ret = new Item();
+        itemService.findById(itemUpdateDto.id())
+            .switchIfEmpty(Mono.error(new ItemNotFoundException("Item with id " + itemUpdateDto.id() + " was not found")))
+                .subscribe(x -> {
+                    ret.setName(itemUpdateDto.name());
+                    ret.setCalories(itemUpdateDto.calories());
+                    ret.setCarbs(itemUpdateDto.carbs());
+                    ret.setProtein(itemUpdateDto.protein());
+                    ret.setFats(itemUpdateDto.fats());
+                });
 
         return ret;
     }

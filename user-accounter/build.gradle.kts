@@ -19,17 +19,20 @@ repositories {
 }
 
 dependencies {
-    implementation("org.springframework.boot:spring-boot-starter-data-jpa")
-    implementation("org.springframework.boot:spring-boot-starter-webflux")
-    implementation("org.springframework.data:spring-data-r2dbc:4.0.1")
+    implementation("org.springframework.boot:spring-boot-starter-jdbc:3.5.7")
     implementation("io.projectreactor:reactor-core:3.8.2")
+    implementation("org.springframework.boot:spring-boot-starter-webflux")
+
+    implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.13")
+    implementation("org.springframework.data:spring-data-r2dbc:3.5.6")
+    implementation("org.postgresql:r2dbc-postgresql:1.1.1.RELEASE")
 
     implementation("org.springframework.boot:spring-boot-starter-validation")
-    implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.3.0")
     implementation("org.springframework.boot:spring-boot-starter-thymeleaf")
     implementation("org.springframework.cloud:spring-cloud-starter-config")
     implementation("org.springframework.cloud:spring-cloud-starter-netflix-eureka-client")
 
+    implementation("org.liquibase:liquibase-core")
     runtimeOnly("org.postgresql:postgresql")
 
     compileOnly("org.projectlombok:lombok")
@@ -51,4 +54,8 @@ dependencyManagement {
 
 tasks.test {
     useJUnitPlatform()
+}
+
+tasks.bootJar {
+    enabled = true
 }
