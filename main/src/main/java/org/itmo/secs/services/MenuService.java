@@ -3,6 +3,7 @@ package org.itmo.secs.services;
 import java.time.LocalDate;
 import java.util.ArrayList;
 
+import org.itmo.secs.client.UserClient;
 import org.itmo.secs.model.entities.*;
 import org.itmo.secs.model.entities.enums.Meal;
 import org.itmo.secs.repositories.MenuRepository;
@@ -13,6 +14,7 @@ import lombok.AllArgsConstructor;
 
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,8 +27,8 @@ import reactor.core.publisher.Flux;
 public class MenuService {
     private MenuRepository menuRep;
     private DishService dishService;
+    private UserClient userClient;
 
-    @Transactional(isolation=Isolation.SERIALIZABLE)
     public Mono<Menu> save(Menu menu) {
         if (
             menuRep.findByMealAndDateAndUserId(
@@ -41,7 +43,6 @@ public class MenuService {
         return Mono.just(menuRep.save(menu));
     }
 
-    @Transactional(isolation=Isolation.SERIALIZABLE)
     public void update(Menu menu) {
         findById(menu.getId())
                 .switchIfEmpty(Mono.error(new ItemNotFoundException("Menu with id " + menu.getId() + " was not found")))
@@ -65,7 +66,6 @@ public class MenuService {
                 .then();
     }
 
-    @Transactional(isolation=Isolation.SERIALIZABLE)
     public void delete(Long id) {
         if (menuRep.findById(id).isEmpty()) {
             throw new ItemNotFoundException("Menu with id " + id.toString() + " was not found");
@@ -100,7 +100,6 @@ public class MenuService {
         }).subscribe();
     }
 
-    @Transactional(isolation=Isolation.SERIALIZABLE)
     public void includeDishToMenu(Long dishId, Long menuId) {
         findById(menuId)
                 .switchIfEmpty(Mono.error(new ItemNotFoundException("Menu with id " + menuId.toString() + " was not found")))
@@ -115,7 +114,6 @@ public class MenuService {
                 .then();
     }
 
-    @Transactional(isolation=Isolation.SERIALIZABLE)
     public void deleteDishFromMenu(Long dishId, Long menuId) {
         Mono.fromCallable(() -> {
             Menu menu = menuRep.findById(menuId)
@@ -131,7 +129,6 @@ public class MenuService {
         }).then();
     }
 
-    @Transactional(isolation=Isolation.SERIALIZABLE)
     public Flux<Dish> makeListOfDishes(Long menuId) {
         Menu menu = menuRep.findById(menuId).orElse(null);
         if (menu == null) {
@@ -147,6 +144,10 @@ public class MenuService {
     }
 
     public Flux<Menu> findAllByUsername(String username) {
-        return Flux.empty();
+        return userClient.getUserByName(username)
+                .filter(HttpEntity::hasBody)
+                .switchIfEmpty(Mono.error(new ItemNotFoundException("User with username " + username + " was not found")))
+                .map(HttpEntity::getBody)
+                .flatMapIterable(user -> menuRep.findAllByUserId(user.id()));
     }
 }

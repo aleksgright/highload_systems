@@ -13,4 +13,6 @@ import reactor.core.publisher.Mono;
 public interface UserClient {
     @GetMapping("/user")
     Mono<ResponseEntity<UserDto>> getUserById(@PathVariable("id") Long id);
+    @GetMapping("/user")
+    Mono<ResponseEntity<UserDto>> getUserByName(@PathVariable("name") String username);
 }
