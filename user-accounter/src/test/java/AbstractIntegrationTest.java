@@ -19,6 +19,11 @@ public abstract class AbstractIntegrationTest {
                     .withPassword("password");
 
 
+    static {
+        POSTGRES.start();
+    }
+
+
     @DynamicPropertySource
     static void overrideProps(DynamicPropertyRegistry registry) {
         registry.add("spring.r2dbc.url",
