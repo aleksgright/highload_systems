@@ -115,6 +115,8 @@ public class MenuController {
     public Mono<ResponseEntity<String>> find(
         @Parameter(description = "ID продукта", example = "1")
         @RequestParam(required=false) Long id,
+        @Parameter(description = "Имя пользователя", example = "Olya")
+        @RequestParam(required=false) String username,
         @Parameter(description = "Номер страницы (нумерация с 0)", example = "0")
         @RequestParam(name="pnumber", required=false) Integer _pageNumber,
         @Parameter(description = "Размер страницы (по умолчанию 50)", example = "10")
@@ -122,6 +124,8 @@ public class MenuController {
     ) {
         if (id != null) {
             return findById(id);
+        } else if (username != null) {
+            return findAllByUsername(username);
         } else {
             Integer pageNumber = (_pageNumber == null) ? 0 : _pageNumber;
             Integer pageSize = (_pageSize == null) 
@@ -131,6 +135,13 @@ public class MenuController {
                     : _pageSize;
             return findAll(pageNumber, pageSize);
         }
+    }
+
+    public Mono<ResponseEntity<String>> findAllByUsername(String username) {
+        return menuService.findAllByUsername(username)
+                .map((it) -> Objects.requireNonNull(conversionService.convert(it, MenuDto.class)))
+                .collectList()
+                .map(menusDto -> ResponseEntity.ok(jsonConvService.conv(menusDto)));
     }
 
     public Mono<ResponseEntity<String>> findAll(Integer pageNumber, Integer pageSize) {

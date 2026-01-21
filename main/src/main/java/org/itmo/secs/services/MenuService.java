@@ -145,4 +145,8 @@ public class MenuService {
         Pageable pageable = PageRequest.of(page, size);
         return Flux.fromIterable(menuRep.findAll(pageable).toList());
     }
+
+    public Flux<Menu> findAllByUsername(String username) {
+        return Flux.empty();
+    }
 }
