@@ -16,7 +16,6 @@ import reactor.core.publisher.Mono;
 public class UserService {
     private UserRepository userRep;
 
-    @Transactional(isolation = Isolation.SERIALIZABLE)
     public Mono<User> save(User user) {
         return userRep.findByName(user.getName())
                 .doOnNext(x -> {
@@ -25,7 +24,6 @@ public class UserService {
                 .switchIfEmpty(userRep.save(user));
     }
 
-    @Transactional(isolation = Isolation.SERIALIZABLE)
     public Mono<User> update(User user) {
         return userRep.findById(user.getId())
                 .switchIfEmpty(Mono.error(new ItemNotFoundException("User with id " + user.getId() + " was not found")))
@@ -35,7 +33,6 @@ public class UserService {
                 });
     }
 
-    @Transactional(isolation = Isolation.SERIALIZABLE)
     public Mono<Void> deleteById(Long id) {
         return userRep.findById(id)
                 .switchIfEmpty(Mono.error(new ItemNotFoundException("User with id " + id + " was not found")))

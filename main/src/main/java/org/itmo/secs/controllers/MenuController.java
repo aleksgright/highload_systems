@@ -99,7 +99,7 @@ public class MenuController {
     @ApiResponses(value = {
             @ApiResponse(
                 responseCode = "200", 
-                description = "Если было указано id, тело содержит соответствующее меню, иначе список из меню по указанной странице",
+                description = "Если было указано id, тело содержит соответствующее меню, иначе список из меню по указанной странице или юзернейму",
                 content = {
                     @Content(mediaType = "application/json", schema = @Schema(implementation = MenuDto.class)),
                     @Content(mediaType = "application/json", array = @ArraySchema(schema = @Schema(implementation = MenuDto.class)))

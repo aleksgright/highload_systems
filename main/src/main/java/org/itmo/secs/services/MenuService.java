@@ -145,9 +145,7 @@ public class MenuService {
 
     public Flux<Menu> findAllByUsername(String username) {
         return userClient.getUserByName(username)
-                .filter(HttpEntity::hasBody)
                 .switchIfEmpty(Mono.error(new ItemNotFoundException("User with username " + username + " was not found")))
-                .map(HttpEntity::getBody)
                 .flatMapIterable(user -> menuRep.findAllByUserId(user.id()));
     }
 }
