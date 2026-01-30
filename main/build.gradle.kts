@@ -23,8 +23,7 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-webflux")
 
     implementation("org.springframework.boot:spring-boot-starter-validation")
-    implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.13")
-    implementation("org.springframework.boot:spring-boot-starter-thymeleaf")
+    implementation("org.springdoc:springdoc-openapi-starter-webflux-api:2.8.14")
     implementation("org.springframework.cloud:spring-cloud-starter-config")
     implementation("org.springframework.cloud:spring-cloud-starter-netflix-eureka-client")
     implementation("com.playtika.reactivefeign:feign-reactor-spring-cloud-starter:4.2.1")

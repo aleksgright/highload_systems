@@ -2,6 +2,7 @@ package org.itmo.secs.services;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Objects;
 
 import org.itmo.secs.client.UserClient;
 import org.itmo.secs.model.entities.*;
@@ -46,24 +47,22 @@ public class MenuService {
     public void update(Menu menu) {
         findById(menu.getId())
                 .switchIfEmpty(Mono.error(new ItemNotFoundException("Menu with id " + menu.getId() + " was not found")))
-                .flatMap(existingMenu -> {
-                    return findByKey(menu.getMeal(), menu.getDate(), menu.getUserId())
-                            .flatMap(foundMenu -> {
-                                if (foundMenu.getId() != menu.getId()) {
-                                    return Mono.error(new DataIntegrityViolationException("Menu with given new key already exists"));
-                                } else {
-                                    return Mono.just(existingMenu);
-                                }
-                            })
-                            .switchIfEmpty(Mono.just(existingMenu));
-                })
+                .flatMap(existingMenu -> findByKey(menu.getMeal(), menu.getDate(), menu.getUserId())
+                    .flatMap(foundMenu -> {
+                        if (!Objects.equals(foundMenu.getId(), menu.getId())) {
+                            return Mono.error(new DataIntegrityViolationException("Menu with given new key already exists"));
+                        } else {
+                            return Mono.just(existingMenu);
+                        }
+                    })
+                )
                 .flatMap(existingMenu -> {
                     existingMenu.setMeal(menu.getMeal());
                     existingMenu.setDate(menu.getDate());
                     existingMenu.setUserId(menu.getUserId());
                     return Mono.fromCallable(() -> menuRep.save(existingMenu));
                 })
-                .then();
+                .subscribe();
     }
 
     public void delete(Long id) {
@@ -111,22 +110,25 @@ public class MenuService {
                             }
                             return Mono.fromCallable(() -> menuRep.save(menu));
                         }))
-                .then();
+                .subscribe();
     }
 
     public void deleteDishFromMenu(Long dishId, Long menuId) {
-        Mono.fromCallable(() -> {
-            Menu menu = menuRep.findById(menuId)
-                    .orElseThrow(() -> new ItemNotFoundException("Menu with id " + menuId.toString() + " was not found"));
+        findById(menuId)
+                .switchIfEmpty(Mono.error(new ItemNotFoundException("Menu with id " + menuId.toString() + " was not found")))
+                .flatMap(menu -> dishService.findById(dishId)
+                        .switchIfEmpty(Mono.error(new ItemNotFoundException("Dish with id " + dishId.toString() + " was not found")))
+                        .flatMap(dish -> {
+                            if (!menu.getDishes().contains(dish)) {
+                                menu.getDishes().add(dish);
+                            }
+                            return Mono.fromCallable(() -> {
+                                menu.getDishes().remove(dish);
+                                return menuRep.save(menu);
+                            });
+                        })
+                ).subscribe();
 
-            Dish dish = dishService.findById(dishId)
-                    .blockOptional()
-                    .orElseThrow(() -> new ItemNotFoundException("Dish with id " + dishId.toString() + " was not found"));
-
-            menu.getDishes().remove(dish);
-            menuRep.save(menu);
-            return null;
-        }).then();
     }
 
     public Flux<Dish> makeListOfDishes(Long menuId) {
