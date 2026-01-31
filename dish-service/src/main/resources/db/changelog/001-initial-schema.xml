@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.9.xsd">
+
+    <changeSet id="002-create-items-table" author="your-name">
+        <createTable tableName="items">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="calories" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="name" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="carbs" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="protein" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="fats" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="creator_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="003-create-dishes-table" author="your-name">
+        <createTable tableName="dishes">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="name" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="004-create-items-dishes-table" author="your-name">
+        <createTable tableName="items_dishes">
+            <column name="item_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="dish_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="count" type="INT">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <addPrimaryKey
+                tableName="items_dishes"
+                columnNames="item_id, dish_id"
+                constraintName="pk_items_dishes"/>
+
+        <addForeignKeyConstraint
+                baseTableName="items_dishes"
+                baseColumnNames="item_id"
+                referencedTableName="items"
+                referencedColumnNames="id"
+                constraintName="fk_items_dishes_item"
+                onDelete="CASCADE"/>
+
+        <addForeignKeyConstraint
+                baseTableName="items_dishes"
+                baseColumnNames="dish_id"
+                referencedTableName="dishes"
+                referencedColumnNames="id"
+                constraintName="fk_items_dishes_dish"
+                onDelete="CASCADE"/>
+    </changeSet>
+
+    <changeSet id="005-create-menus-table" author="your-name">
+        <createTable tableName="menus">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="date" type="DATE">
+                <constraints nullable="false"/>
+            </column>
+            <column name="user_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="meal" type="VARCHAR(50)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <addUniqueConstraint
+                tableName="menus"
+                columnNames="date, meal, user_id"
+                constraintName="uc_menus_date_meal_user"/>
+    </changeSet>
+
+    <changeSet id="006-create-menu-dishes-table" author="your-name">
+        <createTable tableName="menu_dishes">
+            <column name="menu_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="dish_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <addPrimaryKey
+                tableName="menu_dishes"
+                columnNames="menu_id, dish_id"
+                constraintName="pk_menu_dishes"/>
+
+        <addForeignKeyConstraint
+                baseTableName="menu_dishes"
+                baseColumnNames="menu_id"
+                referencedTableName="menus"
+                referencedColumnNames="id"
+                constraintName="fk_menu_dishes_menu"
+                onDelete="CASCADE"/>
+
+        <addForeignKeyConstraint
+                baseTableName="menu_dishes"
+                baseColumnNames="dish_id"
+                referencedTableName="dishes"
+                referencedColumnNames="id"
+                constraintName="fk_menu_dishes_dish"
+                onDelete="CASCADE"/>
+    </changeSet>
+
+</databaseChangeLog>
