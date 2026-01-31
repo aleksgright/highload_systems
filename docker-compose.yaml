@@ -65,10 +65,6 @@ services:
   dish-service:
     build: ./dish-service
     container_name: highload-dish-service
-    environment:
-      DB_URL: jdbc:postgresql://highload-db:5432/highload
-      DB_USERNAME: postgres
-      DB_PASSWORD: password
     ports:
       - "8082:8082"
     depends_on:
@@ -89,7 +85,7 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: password
     ports:
-      - "5433:5433"
+      - "5433:5432"
     volumes:
       - menu_service_db_data:/var/lib/postgresql/data
     networks:
@@ -102,11 +98,7 @@ services:
 
   menu-service:
     build: ./menu-service
-    container_name: highload-dish-service
-    environment:
-      DB_URL: jdbc:postgresql://highload-db:5432/highload
-      DB_USERNAME: postgres
-      DB_PASSWORD: password
+    container_name: highload-menu-service
     ports:
       - "8083:8083"
     depends_on:
@@ -119,6 +111,25 @@ services:
     networks:
       - highload-network
 
+  user-accounter-db:
+    image: postgres:15-alpine
+    container_name: user-accounter-db
+    environment:
+      POSTGRES_DB: highload
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+    ports:
+      - "5434:5432"
+    volumes:
+      - user_accounter_db_data:/var/lib/postgresql/data
+    networks:
+      - highload-network
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres -d highload" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   user-accounter:
     build: ./user-accounter
     container_name: highload-user-accounter
@@ -127,13 +138,17 @@ services:
     ports:
       - "8081:8081"
     depends_on:
-      - highload-db
-      - config-server
-      - eureka-server
+      user-accounter-db:
+        condition: service_healthy
+      config-server:
+        condition: service_healthy
+      eureka-server:
+        condition: service_healthy
 
 volumes:
   dish_service_db_data:
   menu_service_db_data:
+  user_accounter_db_data:
 
 networks:
   highload-network:

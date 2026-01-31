@@ -18,6 +18,7 @@ repositories {
 }
 
 dependencies {
+    implementation("org.liquibase:liquibase-core:5.0.1")
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
     implementation("io.projectreactor:reactor-core:3.8.2")
     implementation("org.springframework.boot:spring-boot-starter-webflux")

@@ -18,6 +18,7 @@ repositories {
 }
 
 dependencies {
+    implementation("org.liquibase:liquibase-core:5.0.1")
     implementation("org.springframework.boot:spring-boot-starter-data-r2dbc")
 
     implementation("org.springdoc:springdoc-openapi-starter-webflux-api:2.8.14")

@@ -29,7 +29,7 @@ dependencies {
     implementation("org.springframework.cloud:spring-cloud-starter-config")
     implementation("org.springframework.cloud:spring-cloud-starter-netflix-eureka-client")
 
-    implementation("org.liquibase:liquibase-core")
+    implementation("org.liquibase:liquibase-core:5.0.1")
     runtimeOnly("org.postgresql:postgresql")
     runtimeOnly("io.r2dbc:r2dbc-pool")
 
