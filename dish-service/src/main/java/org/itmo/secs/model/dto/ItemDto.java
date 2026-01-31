@@ -8,12 +8,12 @@ public record ItemDto(
     Long id,
     @Schema(description = "Имя продукта (от 3 до 15 символов)", type = "string", example = "Хлеб")
     String name,
+    @Schema(description = "Ккал (на 100 г)", type = "number", example = "220")
+    Integer calories,
     @Schema(description = "Углеводы, г (на 100 г)", type = "number", example = "53")
     Integer carbs,
     @Schema(description = "Белки, г (на 100 г)", type = "number", example = "7")
     Integer protein,
     @Schema(description = "Жиры, г (на 100 г)", type = "number", example = "1")
-    Integer fats,
-    @Schema(description = "Ккал (на 100 г)", type = "number", example = "220")
-    Integer calories
+    Integer fats
 ) { }

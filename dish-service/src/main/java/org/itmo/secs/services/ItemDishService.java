@@ -20,7 +20,7 @@ import reactor.core.publisher.Flux;
 public class ItemDishService {
     private final ItemDishRepository itemDishRepository;
 
-    @Transactional(isolation=Isolation.SERIALIZABLE)
+    @Transactional
     public Mono<ItemDish> updateItemDishCount(Item item, Dish dish, int count) {
         Optional<ItemDish> itemDishOpt = itemDishRepository.findById_ItemIdAndId_DishId(item.getId(), dish.getId());
         ItemDish persistUnit = new ItemDish();
@@ -35,7 +35,7 @@ public class ItemDishService {
         return Mono.just(itemDishRepository.save(persistUnit));
     }
 
-    @Transactional(isolation=Isolation.SERIALIZABLE)
+    @Transactional
     public Mono<ItemDish> delete(Item item, Dish dish) {
         return findById(item.getId(), dish.getId())
             .switchIfEmpty(Mono.error(new ItemNotFoundException("Item with id " + item.getId() + " was not found in Dish with id " + dish.getId())))

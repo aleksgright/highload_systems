@@ -23,13 +23,13 @@ public class Item {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @NotNull
-    @PositiveOrZero
-    private Integer calories;
-
     @Size(min = 3, max = 16)
     @Column(unique = true)
     private String name;
+
+    @NotNull
+    @PositiveOrZero
+    private Integer calories;
 
     @NotNull
     @PositiveOrZero

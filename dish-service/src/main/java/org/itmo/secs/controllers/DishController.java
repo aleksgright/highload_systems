@@ -50,7 +50,7 @@ public class DishController {
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public Mono<DishDto> create(@RequestBody DishCreateDto dishCreateDto) {
-        return dishService.save(conversionService.convert(dishCreateDto, Dish.class))
+        return dishService.save(Objects.requireNonNull(conversionService.convert(dishCreateDto, Dish.class)))
             .map((dish) -> Objects.requireNonNull(conversionService.convert(dish, DishDto.class)));
     }
 
@@ -70,8 +70,7 @@ public class DishController {
         })
     @PutMapping
     public Mono<Void> updateName(@RequestBody DishUpdateNameDto dishUpdateNameDto) {
-        dishService.updateName(Objects.requireNonNull(conversionService.convert(dishUpdateNameDto, Dish.class)));
-        return Mono.empty();
+        return dishService.updateName(Objects.requireNonNull(conversionService.convert(dishUpdateNameDto, Dish.class)));
     }
 
     @Operation(summary = "Найти блюда", description = "При указании id ищет блюдо по id, при неуказании id и указании имени ищет блюда по имени, иначе возвращает список блюд по указанной странице")
@@ -119,29 +118,29 @@ public class DishController {
 
     public Mono<ResponseEntity<String>> findById(Long id) {
         return dishService.findById(id)
-        .map((dish) -> ResponseEntity.ok()
-            .header("Content-Type", "application/json")
-            .body(jsonConvService.conv(conversionService.convert(dish, DishDto.class)))
-        )
-        .switchIfEmpty(Mono.just(new ResponseEntity<>((String) null, HttpStatus.NOT_FOUND)));
+                .map((dish) -> ResponseEntity.ok()
+                        .header("Content-Type", "application/json")
+                        .body(jsonConvService.conv(conversionService.convert(dish, DishDto.class)))
+                )
+                .switchIfEmpty(Mono.just(new ResponseEntity<>((String) null, HttpStatus.NOT_FOUND)));
     }
 
     public Mono<ResponseEntity<String>> findByName(String name) {
         return dishService.findByName(name)
-        .map((dish) -> ResponseEntity.ok()
-            .header("Content-Type", "application/json")
-            .body(jsonConvService.conv(conversionService.convert(dish, DishDto.class)))
-        )
-        .switchIfEmpty(Mono.just(new ResponseEntity<>((String) null, HttpStatus.NOT_FOUND)));
+                .map((dish) -> ResponseEntity.ok()
+                        .header("Content-Type", "application/json")
+                        .body(jsonConvService.conv(conversionService.convert(dish, DishDto.class)))
+                )
+                .switchIfEmpty(Mono.just(new ResponseEntity<>((String) null, HttpStatus.NOT_FOUND)));
     }
 
     public Mono<ResponseEntity<String>> findAll(Integer pageNumber, Integer pageSize) {
         return dishService.findAll(pageNumber, pageSize)
-        .map((d) -> Objects.requireNonNull(conversionService.convert(d, DishDto.class)))
-        .collectList()
-        .map(
-            (dishesDto) -> ResponseEntity.ok().header("Content-Type", "application/json").body(jsonConvService.conv(dishesDto))
-        );
+                .map((d) -> Objects.requireNonNull(conversionService.convert(d, DishDto.class)))
+                .collectList()
+                .map(
+                        (dishesDto) -> ResponseEntity.ok().header("Content-Type", "application/json").body(jsonConvService.conv(dishesDto))
+                );
     }
 
     @Operation(summary = "Добавляет продукт в блюдо, если оно еще не было в нем", description = "При наличии блюда с указанным ip в базе, добавляет в него продукт")
@@ -159,8 +158,7 @@ public class DishController {
     @PutMapping("/items")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public Mono<Void> addItem(@RequestBody DishAddItemDto dishAddItemDto) {
-        dishService.addItem(dishAddItemDto.itemId(), dishAddItemDto.dishId(), dishAddItemDto.count());
-        return Mono.empty();
+        return dishService.addItem(dishAddItemDto.itemId(), dishAddItemDto.dishId(), dishAddItemDto.count());
     }
 
     @Operation(summary = "Удалить блюдо", description = "Удалить блюдо по id")
@@ -178,8 +176,7 @@ public class DishController {
         @Parameter(description = "ID удаляемого продукта", example = "1", required = true)
         @RequestParam(name="id") Long dishId
     ) {
-        dishService.delete(dishId);
-        return Mono.empty();
+        return dishService.delete(dishId);
     }
 
     @Operation(summary = "Удалить продукт из блюда", description = "При наличии блюда с указанным ip удаляет из него продукт с указанным id")
@@ -196,14 +193,13 @@ public class DishController {
         })
     @DeleteMapping("/items")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public Mono<Void> delete(
+    public Mono<Void> deleteItem(
         @Parameter(description = "ID удаляемого продукта", example = "1", required = true)
         @RequestParam(name="item-id") Long itemId,
         @Parameter(description = "ID блюда", example = "2", required = true)
         @RequestParam(name="dish-id") Long dishId
     ) {
-        dishService.deleteItem(itemId, dishId);
-        return Mono.empty();
+        return dishService.deleteItem(itemId, dishId);
     }
 
     @Operation(summary = "Получить список продуктов в составе блюда", description = "При наличии блюда с указанным ip в базе возвращает список продуктов с граммовками")
@@ -227,6 +223,8 @@ public class DishController {
         @RequestParam() long id
     ) {
         return dishService.makeListOfItems(id)
-        .map((it) -> new ItemCountDto(conversionService.convert(it.getFirst(), ItemDto.class), it.getSecond()));
+                .map(it ->
+                        new ItemCountDto(conversionService.convert(it.getFirst(), ItemDto.class), it.getSecond())
+                );
     }
 }

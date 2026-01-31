@@ -17,7 +17,6 @@ public class ItemCreateDtoToItemConverter implements Converter<ItemCreateDto, It
         ret.setCarbs(itemCreateDto.carbs());
         ret.setProtein(itemCreateDto.protein());
         ret.setFats(itemCreateDto.fats());
-        ret.setCreatorId(1);
         return ret;
     }
 }
