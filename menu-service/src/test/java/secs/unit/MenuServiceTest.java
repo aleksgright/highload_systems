@@ -1,9 +1,14 @@
 package secs.unit;
 
-import org.itmo.secs.model.entities.Dish;
-import org.itmo.secs.model.entities.User;
+import org.itmo.secs.client.DishServiceClient;
+import org.itmo.secs.client.UserServiceClient;
+import org.itmo.secs.model.dto.DishDto;
+import org.itmo.secs.model.dto.UserDto;
+import org.itmo.secs.model.entities.Menu;
 import org.itmo.secs.model.entities.enums.Meal;
-import org.itmo.secs.services.DishService;
+import org.itmo.secs.repositories.MenuRepository;
+import org.itmo.secs.services.MenuDishesService;
+import org.itmo.secs.services.MenuService;
 import org.itmo.secs.utils.exceptions.DataIntegrityViolationException;
 import org.itmo.secs.utils.exceptions.ItemNotFoundException;
 import org.junit.jupiter.api.BeforeEach;
@@ -13,6 +18,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import reactor.core.publisher.Mono;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -26,41 +32,37 @@ import static org.mockito.Mockito.*;
 
 class MenuServiceTest {
     private final MenuRepository menuRepository = Mockito.mock(MenuRepository.class);
-    private final DishService dishService = Mockito.mock(DishService.class);
+    private final MenuDishesService menuDishesService = Mockito.mock(MenuDishesService.class);
+    private final DishServiceClient dishService = Mockito.mock(DishServiceClient.class);
+    private final UserServiceClient userService = Mockito.mock(UserServiceClient.class);
 
-    private final MenuService menuService = new MenuService(menuRepository, dishService);
+    private final MenuService menuService = new MenuService(menuRepository, menuDishesService, dishService, userService);
 
     private Menu testMenu;
     private Menu existingMenu;
-    private User testUser;
-    private Dish testDish;
+    private UserDto testUser;
+    private DishDto testDish;
     private LocalDate testDate;
 
     @BeforeEach
     void setUp() {
         testDate = LocalDate.of(2024, 1, 15);
 
-        testUser = new User();
-        testUser.setId(1L);
-        testUser.setName("Test User");
+        testUser = new UserDto(1L, "Test User");
 
-        testDish = new Dish();
-        testDish.setId(100L);
-        testDish.setName("Test Dish");
+        testDish = new DishDto(100L, "Test Dish", 1, 1, 1, 1);
 
         testMenu = new Menu();
         testMenu.setId(1L);
         testMenu.setMeal(Meal.BREAKFAST);
         testMenu.setDate(testDate);
-        testMenu.setUser(testUser);
-        testMenu.setDishes(new ArrayList<>());
+        existingMenu.setUserId(null);
 
         existingMenu = new Menu();
         existingMenu.setId(2L);
         existingMenu.setMeal(Meal.LUNCH);
         existingMenu.setDate(testDate.plusDays(1));
-        existingMenu.setUser(null);
-        existingMenu.setDishes(new ArrayList<>());
+        existingMenu.setUserId(null);
     }
 
     @Test
@@ -68,12 +70,12 @@ class MenuServiceTest {
         when(menuRepository.findByMealAndDateAndUserId(
                 testMenu.getMeal(),
                 testMenu.getDate(),
-                testUser.getId()
-        )).thenReturn(Optional.empty());
+                testUser.id()
+        )).thenReturn(Mono.empty());
 
-        when(menuRepository.save(testMenu)).thenReturn(testMenu);
+        when(menuRepository.save(testMenu)).thenReturn(Mono.just(testMenu));
 
-        Menu savedMenu = menuService.save(testMenu);
+        Mono<Menu> savedMenu = menuService.save(testMenu);
 
         assertNotNull(savedMenu);
         assertEquals(testMenu.getId(), savedMenu.getId());

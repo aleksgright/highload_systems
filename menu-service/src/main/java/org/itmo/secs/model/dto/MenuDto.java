@@ -18,12 +18,12 @@ public record MenuDto(
     LocalDate date,
     @Schema(description = "Прием пищи (DINNER, LUNCH или BREAKFAST)", type = "string", example = "BREAKFAST")
     String meal,
+    @Schema(description = "Ккал (сумма)", type = "number", example = "220")
+    Integer calories,
     @Schema(description = "Углеводы (сумма), г", type = "number", example = "53")
     Integer carbs,
     @Schema(description = "Белки (сумма), г", type = "number", example = "7")
     Integer protein,
     @Schema(description = "Жиры (сумма), г", type = "number", example = "1")
-    Integer fats,
-    @Schema(description = "Ккал (сумма)", type = "number", example = "220")
-    Integer calories
+    Integer fats
 ) { }

@@ -7,6 +7,7 @@ import org.itmo.secs.model.entities.Dish;
 import org.itmo.secs.model.entities.User;
 import org.itmo.secs.model.entities.enums.Meal;
 import org.itmo.secs.repositories.DishRepository;
+import org.itmo.secs.repositories.MenuRepository;
 import org.itmo.secs.repositories.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

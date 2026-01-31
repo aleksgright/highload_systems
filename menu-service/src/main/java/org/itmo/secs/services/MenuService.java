@@ -5,6 +5,7 @@ import org.itmo.secs.client.DishServiceClient;
 import org.itmo.secs.client.UserServiceClient;
 import org.itmo.secs.model.dto.DishDto;
 import org.itmo.secs.model.entities.Menu;
+import org.itmo.secs.model.entities.MenuDishesId;
 import org.itmo.secs.model.entities.enums.Meal;
 import org.itmo.secs.repositories.MenuRepository;
 import org.itmo.secs.utils.exceptions.DataIntegrityViolationException;
@@ -20,6 +21,7 @@ import java.util.Objects;
 @AllArgsConstructor
 public class MenuService {
     private MenuRepository menuRep;
+    private MenuDishesService menuDishesService;
     private DishServiceClient dishServiceClient;
     private UserServiceClient userServiceClient;
 
@@ -75,30 +77,20 @@ public class MenuService {
                 .switchIfEmpty(Mono.error(new ItemNotFoundException("Menu with id " + menuId + " was not found")))
                 .flatMap(menu -> dishServiceClient.getById(dishId)
                         .switchIfEmpty(Mono.error(new ItemNotFoundException("Dish with id " + dishId + " was not found")))
-                        .flatMap((dish) -> {
-                            menu.getDishes_id().add(dishId);
-                            return menuRep.save(menu);
-                        })).subscribe();
+                        .flatMap((dish) -> menuDishesService.saveById(new MenuDishesId(menuId, dishId)))).subscribe();
     }
 
     public void deleteDishFromMenu(Long dishId, Long menuId) {
         findById(menuId)
                 .switchIfEmpty(Mono.error(new ItemNotFoundException("Menu with id " + menuId.toString() + " was not found")))
-                .flatMap(menu -> {
-                            if (!menu.getDishes_id().contains(dishId)) {
-                                return Mono.empty();
-                            } else {
-                                menu.getDishes_id().remove(dishId);
-                                return menuRep.save(menu);
-                            }
-                })
+                .flatMap(menu -> menuDishesService.deleteById(new MenuDishesId(menuId, dishId)))
                 .subscribe();
     }
 
     public Flux<DishDto> makeListOfDishes(Long menuId) {
         return menuRep.findById(menuId)
                 .switchIfEmpty(Mono.error(new ItemNotFoundException("Menu with id " + menuId + " was not found")))
-                .flatMapIterable(Menu::getDishes_id)
+                .flatMapMany(x -> menuDishesService.getDishesIdByMenuId(x.getId()))
                 .flatMap(dishId -> dishServiceClient.getById(dishId)
                         .onErrorReturn(new DishDto(dishId, "(not found)", 0, 0, 0, 0)));
     }

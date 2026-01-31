@@ -19,7 +19,7 @@ public class MenuDtoToMenuConvertor implements Converter<MenuDto, Menu> {
         Menu menu = new Menu();
 
         menu.setId(menuDto.id());
-        menu.setUserId(menuDto.userId());
+        menu.setUserId(menuDto.id());
         menu.setDate(menuDto.date());
         try {
             menu.setMeal(Meal.valueOf(menuDto.meal().trim().toUpperCase()));
