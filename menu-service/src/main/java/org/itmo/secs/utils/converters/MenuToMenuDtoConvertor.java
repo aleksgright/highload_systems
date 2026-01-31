@@ -1,8 +1,8 @@
 package org.itmo.secs.utils.converters;
 
 import lombok.AllArgsConstructor;
-import org.itmo.secs.model.dto.*;
-import org.itmo.secs.model.entities.*;
+import org.itmo.secs.model.dto.MenuDto;
+import org.itmo.secs.model.entities.Menu;
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.stereotype.Component;
 

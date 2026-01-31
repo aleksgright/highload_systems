@@ -1,12 +1,10 @@
 package org.itmo.secs.model.dto;
 
-import java.time.LocalDate;
-
+import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.annotation.Nullable;
 import org.springframework.format.annotation.DateTimeFormat;
 
-import jakarta.annotation.Nullable;
-
-import io.swagger.v3.oas.annotations.media.Schema;
+import java.time.LocalDate;
 
 @Schema(name = "Объект для создания меню", description = "Содержит поля для создания нового меню")
 public record MenuCreateDto(

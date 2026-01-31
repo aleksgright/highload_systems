@@ -2,15 +2,13 @@ package org.itmo.secs.model.entities;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
+import lombok.Getter;
+import lombok.Setter;
+import org.itmo.secs.model.entities.enums.Meal;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
-
-import lombok.Getter;
-import lombok.Setter;
-
-import org.itmo.secs.model.entities.enums.Meal;
 
 @Entity
 @Table(name = "menus", uniqueConstraints = {
@@ -25,16 +23,12 @@ public class Menu {
 
     @ManyToMany(cascade = CascadeType.PERSIST)
     @NotNull
-    @JoinTable(
-        name = "menu_dishes", 
-        joinColumns = @JoinColumn(name = "menu_id", referencedColumnName = "id"), 
-        inverseJoinColumns = @JoinColumn(name = "dish_id", referencedColumnName = "id")
-    )
-    private List<Dish> dishes = new ArrayList<>();
+    private List<Long> dishes_id = new ArrayList<>();
 
     @NotNull
     private LocalDate date;
-    
+
+    @NotNull
     private Long userId;
 
     @NotNull

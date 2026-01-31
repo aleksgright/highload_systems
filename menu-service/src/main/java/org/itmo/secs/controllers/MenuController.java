@@ -1,27 +1,25 @@
 package org.itmo.secs.controllers;
 
-import org.springframework.web.bind.annotation.*;
-
-import io.swagger.v3.oas.annotations.*;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
-
+import lombok.AllArgsConstructor;
 import org.itmo.secs.model.dto.*;
 import org.itmo.secs.model.entities.Menu;
-import org.itmo.secs.services.*;
+import org.itmo.secs.services.JsonConvService;
+import org.itmo.secs.services.MenuService;
 import org.itmo.secs.utils.conf.PagingConf;
 import org.springframework.core.convert.ConversionService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-
-import lombok.AllArgsConstructor;
-
-import reactor.core.publisher.Mono;
+import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 import java.util.Objects;
 
@@ -39,7 +37,7 @@ public class MenuController {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "201", description = "Меню было успешно создано",
                 content = {
-                    @Content(mediaType = "application/json", schema = @Schema(implementation = ItemDto.class))
+                    @Content(mediaType = "application/json", schema = @Schema(implementation = MenuDto.class))
                 }
             ), 
             @ApiResponse(responseCode = "400", description = "Меню с такой же комбинацией ДАТА-ПОЛЬЗОВАТЕЛЬ-ПРИЕМ ПИЩИ уже есть базе",
