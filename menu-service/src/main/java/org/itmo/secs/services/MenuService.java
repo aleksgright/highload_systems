@@ -5,16 +5,17 @@ import org.itmo.secs.client.DishServiceClient;
 import org.itmo.secs.client.UserServiceClient;
 import org.itmo.secs.model.dto.DishDto;
 import org.itmo.secs.model.entities.Menu;
-import org.itmo.secs.model.entities.MenuDishesId;
 import org.itmo.secs.model.entities.enums.Meal;
 import org.itmo.secs.repositories.MenuRepository;
 import org.itmo.secs.utils.exceptions.DataIntegrityViolationException;
 import org.itmo.secs.utils.exceptions.ItemNotFoundException;
+import org.itmo.secs.utils.exceptions.ServiceUnavailableException;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.time.LocalDate;
+import java.util.Arrays;
 import java.util.Objects;
 
 @Service
@@ -72,18 +73,25 @@ public class MenuService {
         return  menuRep.findByMealAndDateAndUserId(meal, date, userId);
     }
 
-    public void includeDishToMenu(Long dishId, Long menuId) {
-        menuRep.findById(menuId)
+    public Mono<Void> includeDishToMenu(Long dishId, Long menuId) {
+        return menuRep.findById(menuId)
                 .switchIfEmpty(Mono.error(new ItemNotFoundException("Menu with id " + menuId + " was not found")))
                 .flatMap(menu -> dishServiceClient.getById(dishId)
-                        .switchIfEmpty(Mono.error(new ItemNotFoundException("Dish with id " + dishId + " was not found")))
-                        .flatMap((dish) -> menuDishesService.saveById(new MenuDishesId(menuId, dishId)))).subscribe();
+                        .onErrorResume(e -> {
+                            if (e instanceof ServiceUnavailableException) {
+                                return Mono.error(e);
+                            } else {
+                                return Mono.error(new ItemNotFoundException("Dish with id " + dishId + " was not found"));
+                            }
+                        })
+                        .flatMap((dish) -> menuDishesService.saveByIds(menuId, dishId)))
+                .then();
     }
 
     public void deleteDishFromMenu(Long dishId, Long menuId) {
         findById(menuId)
                 .switchIfEmpty(Mono.error(new ItemNotFoundException("Menu with id " + menuId.toString() + " was not found")))
-                .flatMap(menu -> menuDishesService.deleteById(new MenuDishesId(menuId, dishId)))
+                .flatMap(menu -> menuDishesService.deleteByIds(menuId, dishId))
                 .subscribe();
     }
 
@@ -92,20 +100,28 @@ public class MenuService {
                 .switchIfEmpty(Mono.error(new ItemNotFoundException("Menu with id " + menuId + " was not found")))
                 .flatMapMany(x -> menuDishesService.getDishesIdByMenuId(x.getId()))
                 .flatMap(dishId -> dishServiceClient.getById(dishId)
-                        .onErrorReturn(new DishDto(dishId, "(not found)", 0, 0, 0, 0)));
+                        .onErrorResume(e -> {
+                            if (e instanceof ServiceUnavailableException) {
+                                return Mono.error(e);
+                            } else {
+                                return Mono.just(new DishDto(dishId, "(not found)", 0, 0, 0, 0));
+                            }
+                        }));
     }
 
     public Flux<Menu> findAll(int page, int size) {
         return menuRep.findAll().skip((long) page * size).limitRate(size);
     }
 
-    public Flux<Menu> findAllByUserId(Long id) {
-        return menuRep.findAllByUserId(id);
-    }
-
     public Flux<Menu> findAllByUsername(String username) {
         return userServiceClient.getByName(username)
-                .onErrorResume(x -> Mono.error(new ItemNotFoundException("User with username " + username + " was not found")))
+                .onErrorResume(e -> {
+                    if (e instanceof ServiceUnavailableException) {
+                        return Mono.error(e);
+                    } else {
+                        return Mono.error(new ItemNotFoundException("User with username " + username + " was not found"));
+                    }
+                })
                 .flatMapMany(user -> menuRep.findAllByUserId(user.id()));
     }
 }

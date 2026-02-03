@@ -5,6 +5,7 @@ import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.relational.core.mapping.Column;
 import org.springframework.data.relational.core.mapping.Table;
 
 @Data
@@ -14,6 +15,10 @@ import org.springframework.data.relational.core.mapping.Table;
 @AllArgsConstructor
 public class MenuDishes {
     @Id
-    MenuDishesId id;
+    Long id;
+    @Column("menu_id")
+    Long menuId;
+    @Column("dish_id")
+    Long dishId;
 }
 

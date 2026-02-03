@@ -14,6 +14,7 @@ import org.itmo.secs.model.entities.Menu;
 import org.itmo.secs.services.JsonConvService;
 import org.itmo.secs.services.MenuService;
 import org.itmo.secs.utils.conf.PagingConf;
+import org.itmo.secs.utils.converters.CCPF;
 import org.springframework.core.convert.ConversionService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -50,7 +51,7 @@ public class MenuController {
     @ResponseStatus(HttpStatus.CREATED)
     public Mono<MenuDto> create(@RequestBody MenuCreateDto menuDto) {
         return menuService.save(Objects.requireNonNull(conversionService.convert(menuDto, Menu.class)))
-                .map((menu) -> Objects.requireNonNull(conversionService.convert(menu, MenuDto.class)));
+                .flatMap(this::reactiveConvertMenuToMenuDto);
     }
 
     @Operation(summary = "Изменить меню", description = "Изменяет меню из БД по отправленному DTO")
@@ -137,24 +138,23 @@ public class MenuController {
 
     public Mono<ResponseEntity<String>> findAllByUsername(String username) {
         return menuService.findAllByUsername(username)
-                .map((it) -> Objects.requireNonNull(conversionService.convert(it, MenuDto.class)))
+                .flatMap(this::reactiveConvertMenuToMenuDto)
                 .collectList()
                 .map(menusDto -> ResponseEntity.ok(jsonConvService.conv(menusDto)));
     }
 
     public Mono<ResponseEntity<String>> findAll(Integer pageNumber, Integer pageSize) {
         return menuService.findAll(pageNumber, pageSize)
-        .map((it) -> Objects.requireNonNull(conversionService.convert(it, MenuDto.class)))
+        .flatMap(this::reactiveConvertMenuToMenuDto)
         .collectList()
         .map(menusDto -> ResponseEntity.ok(jsonConvService.conv(menusDto)));
     }
 
     public Mono<ResponseEntity<String>> findById(Long id) {
         return menuService.findById(id)
-        .map(menu -> ResponseEntity.ok(jsonConvService.conv(
-                conversionService.convert(menu, MenuDto.class)
-            )))
-        .switchIfEmpty(Mono.just(ResponseEntity.notFound().build()));
+                .flatMap(this::reactiveConvertMenuToMenuDto)
+                .map(dto -> ResponseEntity.ok(jsonConvService.conv(dto)))
+                .switchIfEmpty(Mono.just(ResponseEntity.notFound().build()));
     }
 
     @Operation(summary = "Добавляет блюдо в меню, если оно еще не было в нем", description = "При наличии меню с указанным ip в базе, добавляет в него блюдо")
@@ -172,8 +172,7 @@ public class MenuController {
     @PutMapping("/dishes")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public Mono<Void> addDish(@RequestBody MenuDishDto dto) {
-        menuService.includeDishToMenu(dto.dishId(), dto.menuId());
-        return Mono.empty();
+        return menuService.includeDishToMenu(dto.dishId(), dto.menuId());
     }
 
     @Operation(summary = "Получить список блюд в составе меню", description = "При наличии меню с указанным ip в базе возвращает список блюд в нем")
@@ -217,5 +216,36 @@ public class MenuController {
     public Mono<Void> deleteDish(@RequestBody MenuDishDto dto) {
         menuService.deleteDishFromMenu(dto.dishId(), dto.menuId());
         return Mono.empty();
+    }
+
+    public Mono<MenuDto> reactiveConvertMenuToMenuDto(Menu menu) {
+        CCPF ccpf = new CCPF(0, 0, 0, 0);
+        return menuService.makeListOfDishes(menu.getId())
+                .reduce(ccpf, (acc, curr) -> {
+                            acc.setCalories(
+                                    acc.getCalories() + curr.calories()
+                            );
+                            acc.setCarbs(
+                                    acc.getCarbs() + curr.carbs()
+                            );
+                            acc.setProtein(
+                                    acc.getProtein() + curr.protein()
+                            );
+                            acc.setFats(
+                                    acc.getFats() + curr.fats()
+                            );
+
+                            return acc;
+                        }
+                ).map(ccpf_ -> new MenuDto(
+                            menu.getId(),
+                            menu.getDate(),
+                            menu.getMeal().toString(),
+                            ccpf_.getCalories(),
+                            ccpf_.getCarbs(),
+                            ccpf_.getProtein(),
+                            ccpf_.getFats()
+                    )
+                );
     }
 }

@@ -39,6 +39,9 @@
             </not>
         </preConditions>
         <createTable tableName="menu_dishes">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
             <column name="menu_id" type="BIGINT">
                 <constraints nullable="false"/>
             </column>
@@ -47,10 +50,10 @@
             </column>
         </createTable>
 
-        <addPrimaryKey
+        <addUniqueConstraint
                 tableName="menu_dishes"
                 columnNames="menu_id, dish_id"
-                constraintName="pk_menu_dishes"/>
+                constraintName="unique_menu_dishes"/>
 
         <addForeignKeyConstraint
                 baseTableName="menu_dishes"

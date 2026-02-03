@@ -13,7 +13,6 @@ import org.springframework.transaction.annotation.Transactional;
 @Component
 @AllArgsConstructor
 public class MenuCreateDtoToMenuConvertor implements Converter<MenuCreateDto, Menu> {
-    @Transactional(isolation=Isolation.SERIALIZABLE)
     @Override
     public Menu convert(MenuCreateDto menuDto) {
         Menu menu = new Menu();

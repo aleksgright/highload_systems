@@ -10,8 +10,8 @@ import lombok.Setter;
 @Getter
 @Setter
 public class CCPF {
-    private Integer calories;
-    private Integer carbs;
-    private Integer protein;
-    private Integer fats;
+    private Integer calories = 0;
+    private Integer carbs = 0;
+    private Integer protein = 0;
+    private Integer fats = 0;
 }

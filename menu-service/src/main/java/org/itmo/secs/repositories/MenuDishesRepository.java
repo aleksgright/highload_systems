@@ -1,13 +1,13 @@
 package org.itmo.secs.repositories;
 
 import org.itmo.secs.model.entities.MenuDishes;
-import org.itmo.secs.model.entities.MenuDishesId;
-import org.springframework.data.repository.reactive.ReactiveCrudRepository;
+import org.springframework.data.r2dbc.repository.R2dbcRepository;
 import org.springframework.stereotype.Repository;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 @Repository
-public interface MenuDishesRepository extends ReactiveCrudRepository<MenuDishes, MenuDishesId> {
-    Flux<MenuDishes> findAllById_MenuId(long menuId);
-    Flux<MenuDishes> findAllById_DishId(long dishId);
+public interface MenuDishesRepository extends R2dbcRepository<MenuDishes, Long> {
+    Flux<MenuDishes> findAllByMenuId(long menuId);
+    Mono<MenuDishes> findByMenuIdAndDishId(long menuId, long dishId);
 }

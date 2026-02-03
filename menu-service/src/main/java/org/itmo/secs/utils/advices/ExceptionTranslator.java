@@ -4,6 +4,7 @@ import jakarta.validation.ConstraintViolationException;
 import org.itmo.secs.model.dto.ErrorDto;
 import org.itmo.secs.utils.exceptions.DataIntegrityViolationException;
 import org.itmo.secs.utils.exceptions.ItemNotFoundException;
+import org.itmo.secs.utils.exceptions.ServiceUnavailableException;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseBody;
@@ -32,5 +33,12 @@ public class ExceptionTranslator extends ResponseEntityExceptionHandler {
     @ResponseBody
     public ErrorDto processConstraintViolationException(ConstraintViolationException ex) {
         return new ErrorDto("Field validation failed");
+    }
+
+    @ExceptionHandler(ServiceUnavailableException.class)
+    @ResponseStatus(HttpStatus.SERVICE_UNAVAILABLE)
+    @ResponseBody
+    public ErrorDto processServiceUnavailableException(ServiceUnavailableException ex) {
+        return new ErrorDto(ex.getMessage());
     }
 }
