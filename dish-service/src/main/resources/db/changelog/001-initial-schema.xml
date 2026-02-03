@@ -30,9 +30,6 @@
             <column name="fats" type="INT">
                 <constraints nullable="false"/>
             </column>
-            <column name="creator_id" type="BIGINT">
-                <constraints nullable="false"/>
-            </column>
         </createTable>
     </changeSet>
 

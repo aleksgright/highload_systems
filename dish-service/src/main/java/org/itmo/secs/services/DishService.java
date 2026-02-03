@@ -25,7 +25,7 @@ public class DishService {
 
     @Transactional
     public Mono<Dish> save(Dish dish) {
-        if (dishRepository.findByName(dish.getName()).isEmpty()) {
+        if (dishRepository.findByName(dish.getName()).isPresent()) {
             throw new DataIntegrityViolationException("Dish with name " + dish.getName() + " already exist");
         }
 

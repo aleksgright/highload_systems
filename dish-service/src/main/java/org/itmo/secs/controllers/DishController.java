@@ -6,6 +6,7 @@ import org.itmo.secs.model.dto.*;
 import org.itmo.secs.model.entities.Dish;
 import org.itmo.secs.services.*;
 import org.itmo.secs.utils.conf.PagingConf;
+import org.itmo.secs.utils.converters.CCPF;
 import org.springframework.core.convert.ConversionService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -51,7 +52,7 @@ public class DishController {
     @ResponseStatus(HttpStatus.CREATED)
     public Mono<DishDto> create(@RequestBody DishCreateDto dishCreateDto) {
         return dishService.save(Objects.requireNonNull(conversionService.convert(dishCreateDto, Dish.class)))
-            .map((dish) -> Objects.requireNonNull(conversionService.convert(dish, DishDto.class)));
+            .flatMap(this::reactiveConvertDishToDishDto);
     }
 
     @Operation(summary = "Изменить блюдо", description = "Изменяет блюдо из БД по отправленному DTO")
@@ -118,25 +119,27 @@ public class DishController {
 
     public Mono<ResponseEntity<String>> findById(Long id) {
         return dishService.findById(id)
-                .map((dish) -> ResponseEntity.ok()
+                .flatMap(this::reactiveConvertDishToDishDto)
+                .map(dto -> ResponseEntity.ok()
                         .header("Content-Type", "application/json")
-                        .body(jsonConvService.conv(conversionService.convert(dish, DishDto.class)))
+                        .body(jsonConvService.conv(dto))
                 )
                 .switchIfEmpty(Mono.just(new ResponseEntity<>((String) null, HttpStatus.NOT_FOUND)));
     }
 
     public Mono<ResponseEntity<String>> findByName(String name) {
         return dishService.findByName(name)
-                .map((dish) -> ResponseEntity.ok()
+                .flatMap(this::reactiveConvertDishToDishDto)
+                .map(dto -> ResponseEntity.ok()
                         .header("Content-Type", "application/json")
-                        .body(jsonConvService.conv(conversionService.convert(dish, DishDto.class)))
+                        .body(jsonConvService.conv(dto))
                 )
                 .switchIfEmpty(Mono.just(new ResponseEntity<>((String) null, HttpStatus.NOT_FOUND)));
     }
 
     public Mono<ResponseEntity<String>> findAll(Integer pageNumber, Integer pageSize) {
         return dishService.findAll(pageNumber, pageSize)
-                .map((d) -> Objects.requireNonNull(conversionService.convert(d, DishDto.class)))
+                .map(this::reactiveConvertDishToDishDto)
                 .collectList()
                 .map(
                         (dishesDto) -> ResponseEntity.ok().header("Content-Type", "application/json").body(jsonConvService.conv(dishesDto))
@@ -226,5 +229,36 @@ public class DishController {
                 .map(it ->
                         new ItemCountDto(conversionService.convert(it.getFirst(), ItemDto.class), it.getSecond())
                 );
+    }
+
+    public Mono<DishDto> reactiveConvertDishToDishDto(Dish dish) {
+        CCPF ccpf = new CCPF(0, 0, 0, 0);
+
+        return dishService.makeListOfItems(dish.getId())
+                .reduce(ccpf, (acc, curr) -> {
+                            acc.setCalories(
+                                    (int) (acc.getCalories() + (double) curr.getFirst().getCalories() / 100.0 * curr.getSecond())
+                            );
+                            acc.setCarbs(
+                                    (int) (acc.getCarbs() + (double) curr.getFirst().getCarbs() / 100.0 * curr.getSecond())
+                            );
+                            acc.setProtein(
+                                    (int) (acc.getProtein() + (double) curr.getFirst().getProtein() / 100.0 * curr.getSecond())
+                            );
+                            acc.setFats(
+                                    (int) (acc.getFats() + (double) curr.getFirst().getFats() / 100.0 * curr.getSecond())
+                            );
+
+                            return acc;
+                        }
+                )
+                .map(ccpf_ -> new DishDto(
+                        dish.getId(),
+                        dish.getName(),
+                        ccpf_.getCalories(),
+                        ccpf_.getCarbs(),
+                        ccpf_.getProtein(),
+                        ccpf_.getFats()
+                ));
     }
 }
