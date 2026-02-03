@@ -18,6 +18,7 @@ repositories {
 }
 
 dependencies {
+    implementation("org.springframework.cloud:spring-cloud-starter-circuitbreaker-resilience4j:5.0.1")
     implementation("org.liquibase:liquibase-core:5.0.1")
     implementation("org.springframework.boot:spring-boot-starter-data-r2dbc")
 

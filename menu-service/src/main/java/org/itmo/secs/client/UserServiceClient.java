@@ -9,11 +9,10 @@ import reactivefeign.spring.config.ReactiveFeignClient;
 import reactor.core.publisher.Mono;
 
 @Component
-@ReactiveFeignClient(name = "user-service")
+@ReactiveFeignClient(name = "user-accounter", fallback = UserServiceClientFallback.class)
 @ResponseBody
 public interface UserServiceClient {
     @GetMapping("/user")
-    Mono<UserDto> getById(@PathVariable("id") Long id);
-    @GetMapping("/user")
     Mono<UserDto> getByName(@PathVariable("name") String username);
 }
+
