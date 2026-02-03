@@ -10,6 +10,6 @@ public class DishServiceClientFallback implements DishServiceClient {
 
     @Override
     public Mono<DishDto> getById(Long id) {
-        return Mono.error(new ServiceUnavailableException("User Service is unavailable now, cannot calculate menu's CCPF"));
+        return Mono.error(new ServiceUnavailableException("Dish Service is unavailable now, cannot calculate menu's CCPF"));
     }
 }
