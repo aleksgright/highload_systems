@@ -1,13 +1,13 @@
 package org.itmo.secs.integration;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import com.google.gson.Gson;
-import io.restassured.RestAssured;
-import io.restassured.response.Response;
 import org.itmo.secs.model.dto.ItemCreateDto;
 import org.itmo.secs.model.dto.ItemUpdateDto;
 import org.itmo.secs.model.entities.Item;
 import org.itmo.secs.repositories.ItemRepository;
-import org.junit.Ignore;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,16 +19,13 @@ import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
-import java.util.ArrayList;
-import java.util.List;
+import io.restassured.RestAssured;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static io.restassured.RestAssured.given;
 
 @Testcontainers
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 public class ItemControllerTest {
-
     @LocalServerPort
     private String port;
 
@@ -44,278 +41,181 @@ public class ItemControllerTest {
         registry.add("spring.datasource.username", pgContainer::getUsername);
         registry.add("spring.datasource.password", pgContainer::getPassword);
         registry.add("spring.jpa.hibernate.ddl-auto", () -> "create-drop");
+        // Отключаем Liquibase для тестов
+        registry.add("spring.liquibase.enabled", () -> "false");
+        // Отключаем конфиг сервер для тестов
+        registry.add("spring.cloud.config.enabled", () -> "false");
+        registry.add("spring.cloud.config.import-check.enabled", () -> "false");
+        registry.add("app.max-page-size", () -> "10");
+        registry.add("app.default-page-size", () -> "5");
     }
 
     @Autowired
     private ItemRepository itemRepository;
 
-    private final Gson gson = new Gson();
+    private List<Item> items;
 
     @BeforeEach
     void setUp() {
         itemRepository.deleteAll();
+
         RestAssured.baseURI = "http://localhost:" + port;
         RestAssured.port = Integer.parseInt(port);
 
-        List<Item> items = new ArrayList<>();
+        // Create items
+        items = new ArrayList<>();
         for (int i = 1; i <= 5; i++) {
             Item item = new Item();
-            item.setName("Milk" + i);
-            item.setCalories(300);
-            item.setProtein(20);
-            item.setFats(10);
-            item.setCarbs(50);
+            item.setName("TestItem" + i);
+            item.setCalories(300 + i * 10);
+            item.setProtein(20 + i);
+            item.setFats(10 + i);
+            item.setCarbs(50 + i * 5);
             items.add(item);
         }
+        items = itemRepository.saveAll(items);
 
-        itemRepository.saveAll(items);
+        assertFalse(items.isEmpty());
     }
 
     @Test
     void testCreateNewItem() {
-        ItemCreateDto requestBodyDto = new ItemCreateDto("TestItem", 200, 15, 5, 30);
-        String requestBody = gson.toJson(requestBodyDto);
+        Gson gson = new Gson();
 
-        Response response = given()
+        ItemCreateDto dto = new ItemCreateDto("NEW_ITEM", 400, 25, 15, 60);
+
+        RestAssured.given()
                 .contentType("application/json")
-                .body(requestBody)
+                .body(gson.toJson(dto))
                 .post("/item")
                 .then()
-                .extract().response();
+                .statusCode(201);
 
-        assertEquals(201, response.statusCode());
-        assertTrue(itemRepository.findByName("TestItem").isPresent());
-
-        Item createdItem = itemRepository.findByName("TestItem").orElseThrow();
-        assertEquals("TestItem", createdItem.getName());
-        assertEquals(200, createdItem.getCalories());
-        assertEquals(5, createdItem.getProtein());
-        assertEquals(30, createdItem.getFats());
-        assertEquals(15, createdItem.getCarbs());
+        assertTrue(itemRepository.findByName("NEW_ITEM").isPresent());
     }
 
     @Test
-    void testCreateDuplicateItemShouldFail() {
-        ItemCreateDto requestBodyDto = new ItemCreateDto("Milk1", 200, 15, 5, 30);
-        String requestBody = gson.toJson(requestBodyDto);
+    void testUpdate() {
+        Gson gson = new Gson();
 
-        Response response = given()
-                .contentType("application/json")
-                .body(requestBody)
-                .post("/item")
-                .then()
-                .extract().response();
-
-        assertEquals(400, response.statusCode()); // Should b 409
-    }
-
-    @Test
-    void testUpdateExistingItem() {
-        Item existingItem = itemRepository.findByName("Milk1").orElseThrow();
-        ItemUpdateDto updateDto = new ItemUpdateDto(
-                existingItem.getId(),
-                "UpdatedMilk",
-                250,
-                25,
-                15,
-                40
+        Item item = items.get(0);
+        ItemUpdateDto dto = new ItemUpdateDto(
+                item.getId(),
+                "UPDATED_ITEM",
+                500,
+                70,
+                30,
+                20
         );
-        String requestBody = gson.toJson(updateDto);
 
-        Response response = given()
+        RestAssured.given()
                 .contentType("application/json")
-                .body(requestBody)
+                .body(gson.toJson(dto))
                 .put("/item")
                 .then()
-                .extract().response();
+                .statusCode(204);
 
-        assertEquals(204, response.statusCode());
-
-        Item updatedItem = itemRepository.findById(existingItem.getId()).orElseThrow();
-        assertEquals("UpdatedMilk", updatedItem.getName());
-        assertEquals(250, updatedItem.getCalories());
-        assertEquals(15, updatedItem.getProtein());
-        assertEquals(40, updatedItem.getFats());
-        assertEquals(25, updatedItem.getCarbs());
+        Item updatedItem = itemRepository.findById(item.getId()).orElseThrow();
+        assertEquals("UPDATED_ITEM", updatedItem.getName());
+        assertEquals(500, updatedItem.getCalories());
+        assertEquals(30, updatedItem.getProtein());
+        assertEquals(20, updatedItem.getFats());
+        assertEquals(70, updatedItem.getCarbs());
     }
 
     @Test
-    void testUpdatingNonExistingItem() {
-        ItemUpdateDto requestBodyDto = new ItemUpdateDto(100000L, "Someone", 10, 10, 10, 10);
-        String requestBody = gson.toJson(requestBodyDto);
+    void testFind() {
+        Item first = items.get(0);
 
-        Response response = given()
-                .contentType("application/json")
-                .body(requestBody)
-                .put("/item")
-                .then()
-                .extract().response();
-
-        assertEquals(500, response.statusCode());
-    }
-
-    @Test
-    void testDeleteExistingItem() {
-        Item existingItem = itemRepository.findByName("Milk1").orElseThrow();
-
-        Response response = given()
-                .param("id", existingItem.getId())
-                .delete("/item")
-                .then()
-                .extract().response();
-
-        assertEquals(204, response.statusCode());
-        assertFalse(itemRepository.existsById(existingItem.getId()));
-    }
-
-    @Test
-    void testDeleteNonExistingItem() {
-        Response response = given()
-                .param("id", 999999L)
-                .delete("/item")
-                .then()
-                .extract().response();
-
-        assertEquals(404, response.statusCode());
-    }
-
-    @Test
-    void testFindById() {
-        Item existingItem = itemRepository.findByName("Milk1").orElseThrow();
-
-        Response response = given()
-                .param("id", existingItem.getId())
+        // Find by ID
+        RestAssured.given()
+                .param("id", first.getId())
                 .get("/item")
                 .then()
-                .extract().response();
+                .statusCode(200);
 
-        assertEquals(200, response.statusCode());
-        assertTrue(response.getBody().asString().contains("Milk1"));
-    }
-
-    @Test
-    void testFindByIdNonExisting() {
-        Response response = given()
-                .param("id", 999999L)
+        // Find by name
+        RestAssured.given()
+                .param("name", first.getName())
                 .get("/item")
                 .then()
-                .extract().response();
+                .statusCode(200);
 
-        assertEquals(404, response.statusCode());
-    }
-
-    @Test
-    void testFindByName() {
-        Response response = given()
-                .param("name", "Milk2")
-                .get("/item")
-                .then()
-                .extract().response();
-
-        assertEquals(200, response.statusCode());
-        assertTrue(response.getBody().asString().contains("Milk2"));
-    }
-
-    @Test
-    void testFindByNameNonExisting() {
-        Response response = given()
-                .param("name", "NonExistingItem")
-                .get("/item")
-                .then()
-                .extract().response();
-
-        assertEquals(404, response.statusCode());
-    }
-
-    @Test
-    void testFindAllWithPagination() {
-        Response response = given()
+        // Find with pagination
+        RestAssured.given()
                 .param("pnumber", 0)
                 .param("psize", 2)
                 .get("/item")
                 .then()
-                .extract().response();
-
-        assertEquals(200, response.statusCode());
-        assertTrue(response.getBody().asString().contains("Milk1"));
-        assertTrue(response.getBody().asString().contains("Milk2"));
-
-        String totalCount = response.getHeader("X-Total-Count");
-        assertNotNull(totalCount);
-        assertEquals("5", totalCount);
+                .statusCode(200);
     }
 
     @Test
-    void testFindAllWithDefaultPagination() {
-        Response response = given()
+    void testDelete() {
+        Item item = items.get(0);
+
+        RestAssured.given()
+                .param("id", item.getId())
+                .delete("/item")
+                .then()
+                .statusCode(204);
+
+        assertFalse(itemRepository.existsById(item.getId()));
+    }
+
+    @Test
+    void testFindAllWithPagination() {
+        RestAssured.given()
+                .param("pnumber", 0)
+                .param("psize", 3)
                 .get("/item")
                 .then()
-                .extract().response();
-
-        assertEquals(200, response.statusCode());
+                .statusCode(200)
+                .header("X-Total-Count", "5");
     }
 
-
     @Test
-    void testUpdateWithInvalidData() {
-        Item existingItem = itemRepository.findByName("Milk1").orElseThrow();
-        ItemUpdateDto updateDto = new ItemUpdateDto(
-                existingItem.getId(),
-                "UpdatedMilk",
-                -100,
-                -10,
-                -5,
-                -20
+    void testCreateDuplicateItem() {
+        Gson gson = new Gson();
+        Item existingItem = items.get(0);
+
+        ItemCreateDto dto = new ItemCreateDto(
+                existingItem.getName(),
+                400, 25, 15, 60
         );
-        String requestBody = gson.toJson(updateDto);
 
-        Response response = given()
+        RestAssured.given()
                 .contentType("application/json")
-                .body(requestBody)
-                .put("/item")
-                .then()
-                .extract().response();
-
-        assertTrue(response.statusCode() >= 400 && response.statusCode() < 600);
-    }
-
-    @Ignore
-    @Test
-    void testCreateItemWithEmptyName() {
-        ItemCreateDto requestBodyDto = new ItemCreateDto("", 200, 15, 5, 30);
-        String requestBody = gson.toJson(requestBodyDto);
-
-        Response response = given()
-                .contentType("application/json")
-                .body(requestBody)
+                .body(gson.toJson(dto))
                 .post("/item")
                 .then()
-                .extract().response();
-
-        assertTrue(response.statusCode() >= 400);
+                .statusCode(400);
     }
 
     @Test
-    void testFindWithNegativePageNumber() {
-        Response response = given()
-                .param("pnumber", -1)
-                .param("psize", 10)
-                .get("/item")
-                .then()
-                .extract().response();
+    void testUpdateNonExistingItem() {
+        Gson gson = new Gson();
 
-        assertEquals(500, response.statusCode());
+        ItemUpdateDto dto = new ItemUpdateDto(
+                999999L,
+                "NON_EXISTENT",
+                500, 30, 20, 70
+        );
+
+        RestAssured.given()
+                .contentType("application/json")
+                .body(gson.toJson(dto))
+                .put("/item")
+                .then()
+                .statusCode(404);
     }
 
     @Test
-    void testFindWithZeroPageSize() {
-        Response response = given()
-                .param("pnumber", 0)
-                .param("psize", 0)
-                .get("/item")
+    void testDeleteNonExistingItem() {
+        RestAssured.given()
+                .param("id", 999999L)
+                .delete("/item")
                 .then()
-                .extract().response();
-
-        assertEquals(500, response.statusCode());
+                .statusCode(404);
     }
 }

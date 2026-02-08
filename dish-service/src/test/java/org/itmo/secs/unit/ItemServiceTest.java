@@ -3,176 +3,212 @@ package org.itmo.secs.unit;
 import org.itmo.secs.model.entities.Item;
 import org.itmo.secs.repositories.ItemRepository;
 import org.itmo.secs.services.ItemService;
+import org.itmo.secs.utils.exceptions.DataIntegrityViolationException;
+import org.itmo.secs.utils.exceptions.ItemNotFoundException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import reactor.test.StepVerifier;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-public class ItemServiceTest {
-    private final ItemRepository itemRepository = Mockito.mock(ItemRepository.class);
+class ItemServiceTest {
+
+    private final ItemRepository itemRepository = mock(ItemRepository.class);
     private final ItemService itemService = new ItemService(itemRepository);
 
-    private Item testItem;
+    private Item item;
 
     @BeforeEach
     void setUp() {
-        testItem = createItem(1L, "Test Item", 300, 20, 10, 50);
+        item = new Item();
+        item.setId(1L);
+        item.setName("Test Item");
+        item.setCalories(300);
+        item.setProtein(20);
+        item.setFats(10);
+        item.setCarbs(50);
+    }
+
+    // ---------- SAVE ----------
+
+    @Test
+    void save_ShouldSaveItem_WhenNotExists() {
+        when(itemRepository.findByName("Test Item")).thenReturn(Optional.empty());
+        when(itemRepository.save(item)).thenReturn(item);
+
+        StepVerifier.create(itemService.save(item))
+                .expectNext(item)
+                .verifyComplete();
+
+        verify(itemRepository).save(item);
     }
 
     @Test
-    void findById_ShouldReturnNull_WhenItemDoesNotExist() {
-        when(itemRepository.findById(999L)).thenReturn(Optional.empty());
+    void save_ShouldThrow_WhenNameExists() {
+        when(itemRepository.findByName("Test Item")).thenReturn(Optional.of(item));
 
-        Item foundItem = itemService.findById(999L);
+        StepVerifier.create(itemService.save(item))
+                .expectError(DataIntegrityViolationException.class)
+                .verify();
 
-        assertNull(foundItem);
-
-        verify(itemRepository).findById(999L);
+        verify(itemRepository, never()).save(any());
     }
 
+    // ---------- UPDATE ----------
 
     @Test
-    void findByName_ShouldReturnItem_WhenItemExists() {
-        when(itemRepository.findByName("Test Item")).thenReturn(Optional.of(testItem));
+    void update_ShouldUpdateItem_WhenValid() {
+        when(itemRepository.findById(1L)).thenReturn(Optional.of(item));
+        when(itemRepository.findByName("Updated Name")).thenReturn(Optional.empty());
+        when(itemRepository.save(any(Item.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        Item foundItem = itemService.findByName("Test Item");
+        Item updatedItem = new Item();
+        updatedItem.setId(1L);
+        updatedItem.setName("Updated Name");
+        updatedItem.setCalories(400);
+        updatedItem.setProtein(25);
+        updatedItem.setFats(15);
+        updatedItem.setCarbs(60);
 
-        assertNotNull(foundItem);
-        assertEquals(testItem.getName(), foundItem.getName());
+        StepVerifier.create(itemService.update(updatedItem))
+                .verifyComplete();
 
-        verify(itemRepository).findByName("Test Item");
-    }
-
-    @Test
-    void findByName_ShouldReturnNull_WhenItemDoesNotExist() {
-        when(itemRepository.findByName("Non Existent Item")).thenReturn(Optional.empty());
-
-        Item foundItem = itemService.findByName("Non Existent Item");
-
-        assertNull(foundItem);
-
-        verify(itemRepository).findByName("Non Existent Item");
-    }
+        verify(itemRepository).save(any(Item.class));}
 
     @Test
-    void findByName_ShouldHandleNullName() {
-        Item foundItem = itemService.findByName(null);
+    void update_ShouldThrow_WhenItemNotFound() {
+        when(itemRepository.findById(1L)).thenReturn(Optional.empty());
 
-        assertNull(foundItem);
+        StepVerifier.create(itemService.update(item))
+                .expectError(ItemNotFoundException.class)
+                .verify();
 
-        verify(itemRepository).findByName(null);
-    }
-
-    @Test
-    void findAll_ShouldReturnPaginatedItems() {
-        int pageNumber = 0;
-        int pageSize = 10;
-        Pageable pageable = PageRequest.of(pageNumber, pageSize);
-
-        List<Item> items = List.of(
-                createItem(1L, "Milk1", 300, 20, 10, 50),
-                createItem(2L, "Milk2", 300, 20, 10, 50),
-                createItem(3L, "Milk3", 300, 20, 10, 50),
-                createItem(4L, "Milk4", 300, 20, 10, 50),
-                createItem(5L, "Milk5", 300, 20, 10, 50));
-
-        Page<Item> page = new PageImpl<>(items, pageable, items.size());
-
-        when(itemRepository.findAll(pageable)).thenReturn(page);
-
-        List<Item> result = itemService.findAll(pageNumber, pageSize);
-
-        assertNotNull(result);
-        assertEquals(5, result.size());
-        assertEquals("Milk1", result.get(0).getName());
-        assertEquals("Milk5", result.get(4).getName());
-
-        verify(itemRepository).findAll(pageable);
+        verify(itemRepository, never()).save(any());
     }
 
     @Test
-    void findAll_ShouldReturnEmptyList_WhenNoItems() {
-        int pageNumber = 0;
-        int pageSize = 10;
-        Pageable pageable = PageRequest.of(pageNumber, pageSize);
-        Page<Item> emptyPage = new PageImpl<>(new ArrayList<>(), pageable, 0);
+    void update_ShouldThrow_WhenNameExistsForDifferentItem() {
+        Item existingItem = new Item();
+        existingItem.setId(2L);
+        existingItem.setName("Existing Name");
 
-        when(itemRepository.findAll(pageable)).thenReturn(emptyPage);
+        when(itemRepository.findById(1L)).thenReturn(Optional.of(item));
+        when(itemRepository.findByName("Existing Name")).thenReturn(Optional.of(existingItem));
 
-        List<Item> result = itemService.findAll(pageNumber, pageSize);
+        Item updatedItem = new Item();
+        updatedItem.setId(1L);
+        updatedItem.setName("Existing Name");
 
-        assertNotNull(result);
-        assertTrue(result.isEmpty());
+        StepVerifier.create(itemService.update(updatedItem))
+                .expectError(DataIntegrityViolationException.class)
+                .verify();
 
-        verify(itemRepository).findAll(pageable);
+        verify(itemRepository, never()).save(any());
+    }
+
+    // ---------- FIND ----------
+
+    @Test
+    void findById_ShouldReturnItem() {
+        when(itemRepository.findById(1L)).thenReturn(Optional.of(item));
+
+        StepVerifier.create(itemService.findById(1L))
+                .expectNext(item)
+                .verifyComplete();
     }
 
     @Test
-    void findAll_ShouldHandleSecondPage() {
-        int pageNumber = 1;
-        int pageSize = 2;
-        Pageable pageable = PageRequest.of(pageNumber, pageSize);
+    void findById_ShouldReturnEmpty_WhenNotFound() {
+        when(itemRepository.findById(1L)).thenReturn(Optional.empty());
 
-        List<Item> items = List.of(
-                createItem(3L, "Milk3", 300, 20, 10, 50),
-                createItem(4L, "Milk4", 300, 20, 10, 50));
-
-        Page<Item> page = new PageImpl<>(items, pageable, 5);
-
-        when(itemRepository.findAll(pageable)).thenReturn(page);
-
-        List<Item> result = itemService.findAll(pageNumber, pageSize);
-
-        assertNotNull(result);
-        assertEquals(2, result.size());
-        assertEquals("Milk3", result.get(0).getName());
-        assertEquals("Milk4", result.get(1).getName());
-
-        verify(itemRepository).findAll(pageable);
+        StepVerifier.create(itemService.findById(1L))
+                .verifyComplete();
     }
 
     @Test
-    void count_ShouldReturnItemCount() {
-        long expectedCount = 42L;
-        when(itemRepository.count()).thenReturn(expectedCount);
+    void findByName_ShouldReturnItem() {
+        when(itemRepository.findByName("Test Item")).thenReturn(Optional.of(item));
 
-        long count = itemService.count();
-
-        assertEquals(expectedCount, count);
-
-        verify(itemRepository).count();
+        StepVerifier.create(itemService.findByName("Test Item"))
+                .expectNext(item)
+                .verifyComplete();
     }
 
     @Test
-    void count_ShouldReturnZero_WhenNoItems() {
+    void findByName_ShouldReturnEmpty_WhenNotFound() {
+        when(itemRepository.findByName("Non Existent")).thenReturn(Optional.empty());
+
+        StepVerifier.create(itemService.findByName("Non Existent"))
+                .verifyComplete();
+    }
+
+    // ---------- DELETE ----------
+
+    @Test
+    void delete_ShouldDeleteItem() {
+        when(itemRepository.findById(1L)).thenReturn(Optional.of(item));
+
+        StepVerifier.create(itemService.delete(1L))
+                .verifyComplete();
+
+        verify(itemRepository).deleteById(1L);
+    }
+
+    @Test
+    void delete_ShouldThrow_WhenNotExists() {
+        when(itemRepository.findById(1L)).thenReturn(Optional.empty());
+
+        StepVerifier.create(itemService.delete(1L))
+                .expectError(ItemNotFoundException.class)
+                .verify();
+
+        verify(itemRepository, never()).deleteById(any());
+    }
+
+    // ---------- FIND ALL ----------
+
+    @Test
+    void findAll_ShouldReturnFlux() {
+        List<Item> itemsList = List.of(item);
+        when(itemRepository.findAll(any(Pageable.class)))
+                .thenReturn(new PageImpl<>(itemsList));
+
+        StepVerifier.create(itemService.findAll(0, 10))
+                .expectNext(item)
+                .verifyComplete();
+    }
+
+    @Test
+    void findAll_ShouldReturnEmptyFlux() {
+        when(itemRepository.findAll(any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of()));
+
+        StepVerifier.create(itemService.findAll(0, 10))
+                .verifyComplete();
+    }
+
+    // ---------- COUNT ----------
+
+    @Test
+    void count_ShouldReturnCount() {
+        when(itemRepository.count()).thenReturn(5L);
+
+        StepVerifier.create(itemService.count())
+                .expectNext(5L)
+                .verifyComplete();
+    }
+
+    @Test
+    void count_ShouldReturnZero() {
         when(itemRepository.count()).thenReturn(0L);
 
-        long count = itemService.count();
-
-        assertEquals(0L, count);
-
-        verify(itemRepository).count();
-    }
-
-    private Item createItem(Long id, String name, int calories, int protein, int fat, int carbohydrate) {
-        Item item = new Item();
-        item.setId(id);
-        item.setName(name);
-        item.setCalories(calories);
-        item.setProtein(protein);
-        item.setFats(fat);
-        item.setCarbs(carbohydrate);
-        item.setCreatorId(0L);
-        return item;
+        StepVerifier.create(itemService.count())
+                .expectNext(0L)
+                .verifyComplete();
     }
 }

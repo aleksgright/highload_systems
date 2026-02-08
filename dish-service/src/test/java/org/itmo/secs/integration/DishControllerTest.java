@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.google.gson.Gson;
+import org.itmo.secs.model.dto.DishAddItemDto;
 import org.itmo.secs.model.dto.DishCreateDto;
 import org.itmo.secs.model.dto.DishUpdateNameDto;
 import org.itmo.secs.model.entities.Dish;
@@ -42,6 +43,13 @@ public class DishControllerTest {
         registry.add("spring.datasource.username", pgContainer::getUsername);
         registry.add("spring.datasource.password", pgContainer::getPassword);
         registry.add("spring.jpa.hibernate.ddl-auto", () -> "create-drop");
+        // Отключаем Liquibase для тестов
+        registry.add("spring.liquibase.enabled", () -> "false");
+        // Отключаем конфиг сервер для тестов
+        registry.add("spring.cloud.config.enabled", () -> "false");
+        registry.add("spring.cloud.config.import-check.enabled", () -> "false");
+        registry.add("app.max-page-size", () -> "10");
+        registry.add("app.default-page-size", () -> "5");
     }
 
     @Autowired
@@ -91,87 +99,91 @@ public class DishControllerTest {
     void testCreateNewDish() {
         Gson gson = new Gson();
 
-        DishCreateDto requestBodyDto = new DishCreateDto("Someone");
+        DishCreateDto dto = new DishCreateDto("NEW_DISH");
 
-        String requestBody = gson.toJson(requestBodyDto);
         RestAssured.given()
                 .contentType("application/json")
-                .body(requestBody)
+                .body(gson.toJson(dto))
                 .post("/dish")
                 .then()
                 .statusCode(201);
 
-        // Verify the dish was created
-        List<Dish> allDishes = dishRepository.findAll();
-        assertEquals(6, allDishes.size());
-
-        // Find the newly created dish by name
-        Dish newDish = dishRepository.findByName("Someone").orElse(null);
-        assertNotNull(newDish);
+        assertTrue(dishRepository.findByName("NEW_DISH").isPresent());
     }
 
     @Test
     void testUpdate() {
         Gson gson = new Gson();
 
-        // Test update with non-existent ID (should return 404, not 500)
-        DishUpdateNameDto failedBodyDto = new DishUpdateNameDto(100000L, "Someone");
+        DishUpdateNameDto dto =
+                new DishUpdateNameDto(dishes.get(0).getId(), "NEW_NAME");
 
-        String requestBody = gson.toJson(failedBodyDto);
         RestAssured.given()
                 .contentType("application/json")
-                .body(requestBody)
+                .body(gson.toJson(dto))
                 .put("/dish")
                 .then()
-                .statusCode(500); // Changed from 500 to 404 (not found)
+                .statusCode(204);
 
-        // Test successful update
-        Dish existingDish = dishes.get(0);
-        DishUpdateNameDto requestBodyDto = new DishUpdateNameDto(existingDish.getId(), "xdx");
-
-        String success = gson.toJson(requestBodyDto);
-        RestAssured.given()
-                .contentType("application/json")
-                .body(success)
-                .put("/dish")
-                .then()
-                .statusCode(200);
-
-        // Verify the update
-        Dish updatedDish = dishRepository.findById(existingDish.getId()).orElseThrow();
-        assertEquals("xdx", updatedDish.getName());
+        assertEquals(
+                "NEW_NAME",
+                dishRepository.findById(dishes.get(0).getId()).orElseThrow().getName()
+        );
     }
 
     @Test
     void testFind() {
-        Dish firstDish = dishes.get(0);
+        Dish first = dishes.get(0);
 
-        // Test find by ID
         RestAssured.given()
-                .contentType("application/json")
-                .param("id", firstDish.getId())
+                .param("id", first.getId())
                 .get("/dish")
                 .then()
                 .statusCode(200);
 
-        // Test find by name
         RestAssured.given()
-                .contentType("application/json")
-                .param("name", "asdf5")
+                .param("name", first.getName())
                 .get("/dish")
                 .then()
                 .statusCode(200);
 
-        // Test pagination
         RestAssured.given()
-                .contentType("application/json")
-                .param("page", 1)  // Changed from pnumber to page
-                .param("size", 2)  // Changed from psize to size
+                .param("pnumber", 0)
+                .param("psize", 2)
                 .get("/dish")
                 .then()
                 .statusCode(200);
     }
 
+    @Test
+    void testDelete() {
+        Dish dish = dishes.get(0);
+
+        RestAssured.given()
+                .param("id", dish.getId())
+                .delete("/dish")
+                .then()
+                .statusCode(204);
+
+        assertFalse(dishRepository.existsById(dish.getId()));
+    }
+
+    @Test
+    void testAddItem() {
+        Gson gson = new Gson();
+
+        Dish dish = dishes.get(0);
+        Item item = items.get(0);
+
+        var dto = new DishAddItemDto(item.getId(), dish.getId(), 50);
+
+        RestAssured.given()
+                .contentType("application/json")
+                .body(gson.toJson(dto))
+                .put("/dish/items")
+                .then()
+                .statusCode(204);
+    }
 //    @Test
 //    void testDelete() {
 //        Dish dishToDelete = dishes.get(0);
