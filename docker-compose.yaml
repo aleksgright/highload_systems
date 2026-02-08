@@ -53,7 +53,7 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - dish_service_db_data:/var/lib/postgresql/data
+      - dish_service_db_data_lab2:/var/lib/postgresql/data
     networks:
       - highload-network
     healthcheck:
@@ -87,7 +87,7 @@ services:
     ports:
       - "5433:5432"
     volumes:
-      - menu_service_db_data:/var/lib/postgresql/data
+      - menu_service_db_data_lab2:/var/lib/postgresql/data
     networks:
       - highload-network
     healthcheck:
@@ -121,7 +121,7 @@ services:
     ports:
       - "5434:5432"
     volumes:
-      - user_accounter_db_data:/var/lib/postgresql/data
+      - user_accounter_db_data_lab2:/var/lib/postgresql/data
     networks:
       - highload-network
     healthcheck:
@@ -146,9 +146,9 @@ services:
         condition: service_healthy
 
 volumes:
-  dish_service_db_data:
-  menu_service_db_data:
-  user_accounter_db_data:
+  dish_service_db_data_lab2:
+  menu_service_db_data_lab2:
+  user_accounter_db_data_lab2:
 
 networks:
   highload-network:
