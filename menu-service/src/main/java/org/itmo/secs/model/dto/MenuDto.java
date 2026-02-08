@@ -8,7 +8,7 @@ import org.springframework.format.annotation.DateTimeFormat;
 
 import java.time.LocalDate;
 
-@Schema(name = "Объект меню", description = "Содержит основные поля меню и его ID, используется при отображении меню и его обновлении")
+@Schema(name = "Объект меню", description = "Содержит основные поля меню и его ID, используется при отображении меню")
 public record MenuDto(
     @Schema(description = "ID меню", type = "number", example = "1")
     Long id,

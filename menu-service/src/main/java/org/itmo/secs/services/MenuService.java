@@ -15,7 +15,6 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.time.LocalDate;
-import java.util.Arrays;
 import java.util.Objects;
 
 @Service
@@ -27,19 +26,25 @@ public class MenuService {
     private UserServiceClient userServiceClient;
 
     public Mono<Menu> save(Menu menu) {
-        return menuRep.findByMealAndDateAndUserId(
-            menu.getMeal(),
-            menu.getDate(),
-            menu.getUserId()
-        )
-                .doOnNext(x -> {
-                    throw new DataIntegrityViolationException("Menu with given key already exists");
-                })
-                .switchIfEmpty(menuRep.save(menu));
+        return userServiceClient
+                .getById(menu.getUserId())
+                .onErrorResume(Mono::error)
+                .hasElement()
+                .flatMap(_x ->
+                    menuRep.findByMealAndDateAndUserId(
+                        menu.getMeal(),
+                        menu.getDate(),
+                        menu.getUserId()
+                    )
+                            .doOnNext(x -> {
+                                throw new DataIntegrityViolationException("Menu with given key already exists");
+                            })
+                            .switchIfEmpty(menuRep.save(menu))
+                );
     }
 
-    public void update(Menu menu) {
-        findById(menu.getId())
+    public Mono<Void> update(Menu menu) {
+        return findById(menu.getId())
                 .switchIfEmpty(Mono.error(new ItemNotFoundException("Menu with id " + menu.getId() + " was not found")))
                 .flatMap(existingMenu -> findByKey(menu.getMeal(), menu.getDate(), menu.getUserId())
                     .flatMap(foundMenu -> {
@@ -49,20 +54,21 @@ public class MenuService {
                             return Mono.just(existingMenu);
                         }
                     })
+                    .switchIfEmpty(Mono.just(existingMenu))
                 )
                 .flatMap(existingMenu -> {
                     existingMenu.setMeal(menu.getMeal());
                     existingMenu.setDate(menu.getDate());
                     existingMenu.setUserId(menu.getUserId());
-                    return Mono.fromCallable(() -> menuRep.save(existingMenu));
+                    return menuRep.save(existingMenu);
                 })
-                .subscribe();
+                .then();
     }
 
-    public void delete(Long id) {
-        menuRep.findById(id)
+    public Mono<Void> delete(Long id) {
+        return menuRep.findById(id)
                 .switchIfEmpty(Mono.error(new ItemNotFoundException("Menu with id " + id + " was not found")))
-                .flatMap(x -> menuRep.deleteById(id)).subscribe();
+                .flatMap(x -> menuRep.deleteById(id)).then();
     }
 
     public Mono<Menu> findById(Long id) {
@@ -76,23 +82,38 @@ public class MenuService {
     public Mono<Void> includeDishToMenu(Long dishId, Long menuId) {
         return menuRep.findById(menuId)
                 .switchIfEmpty(Mono.error(new ItemNotFoundException("Menu with id " + menuId + " was not found")))
-                .flatMap(menu -> dishServiceClient.getById(dishId)
-                        .onErrorResume(e -> {
-                            if (e instanceof ServiceUnavailableException) {
-                                return Mono.error(e);
+                .flatMap(menu -> menuDishesService.getDishesIdByMenuId(menuId)
+                        .any(dishId::equals)
+                        .flatMap(res -> {
+                            if (res) {
+                                return Mono.error(new DataIntegrityViolationException("Dish with id " + dishId + " already in menu with id " + menuId));
                             } else {
-                                return Mono.error(new ItemNotFoundException("Dish with id " + dishId + " was not found"));
+                                return Mono.just(menu);
                             }
                         })
-                        .flatMap((dish) -> menuDishesService.saveByIds(menuId, dishId)))
+                )
+                .flatMap(menu -> dishServiceClient.getById(dishId)
+                        .onErrorResume(Mono::error)
+                        .flatMap((dish) -> menuDishesService.saveByIds(menuId, dishId))
+                )
                 .then();
     }
 
-    public void deleteDishFromMenu(Long dishId, Long menuId) {
-        findById(menuId)
+    public Mono<Void> deleteDishFromMenu(Long dishId, Long menuId) {
+        return findById(menuId)
                 .switchIfEmpty(Mono.error(new ItemNotFoundException("Menu with id " + menuId.toString() + " was not found")))
                 .flatMap(menu -> menuDishesService.deleteByIds(menuId, dishId))
-                .subscribe();
+                .flatMap(menu -> menuDishesService.getDishesIdByMenuId(menuId)
+                        .any(dishId::equals)
+                        .flatMap(res -> {
+                            if (res) {
+                                return menuDishesService.deleteByIds(menuId, dishId);
+                            } else {
+                                return Mono.error(new ItemNotFoundException("Dish with id " + dishId + "is not in menu with id " + menuId));
+                            }
+                        })
+                )
+                .then();
     }
 
     public Flux<DishDto> makeListOfDishes(Long menuId) {
@@ -115,13 +136,7 @@ public class MenuService {
 
     public Flux<Menu> findAllByUsername(String username) {
         return userServiceClient.getByName(username)
-                .onErrorResume(e -> {
-                    if (e instanceof ServiceUnavailableException) {
-                        return Mono.error(e);
-                    } else {
-                        return Mono.error(new ItemNotFoundException("User with username " + username + " was not found"));
-                    }
-                })
+                .onErrorResume(Mono::error)
                 .flatMapMany(user -> menuRep.findAllByUserId(user.id()));
     }
 }
