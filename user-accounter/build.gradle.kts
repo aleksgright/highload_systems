@@ -24,7 +24,7 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-jdbc")
 
     implementation("org.springdoc:springdoc-openapi-starter-webflux-api:2.8.14")
-    implementation("org.postgresql:r2dbc-postgresql")
+    implementation("org.postgresql:r2dbc-postgresql:1.1.1.RELEASE")
 
     implementation("org.flywaydb:flyway-database-postgresql")
     implementation("org.flywaydb:flyway-core")

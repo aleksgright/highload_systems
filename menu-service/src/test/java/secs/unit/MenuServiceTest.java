@@ -14,495 +14,365 @@ import org.itmo.secs.utils.exceptions.ItemNotFoundException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import reactor.test.StepVerifier;
 
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 class MenuServiceTest {
     private final MenuRepository menuRepository = Mockito.mock(MenuRepository.class);
     private final MenuDishesService menuDishesService = Mockito.mock(MenuDishesService.class);
-    private final DishServiceClient dishService = Mockito.mock(DishServiceClient.class);
-    private final UserServiceClient userService = Mockito.mock(UserServiceClient.class);
+    private final DishServiceClient dishServiceClient = Mockito.mock(DishServiceClient.class);
+    private final UserServiceClient userServiceClient = Mockito.mock(UserServiceClient.class);
 
-    private final MenuService menuService = new MenuService(menuRepository, menuDishesService, dishService, userService);
+    private final MenuService menuService = new MenuService(
+            menuRepository,
+            menuDishesService,
+            dishServiceClient,
+            userServiceClient
+    );
 
     private Menu testMenu;
-    private Menu existingMenu;
-    private UserDto testUser;
-    private DishDto testDish;
+    private UserDto testUserDto;
+    private DishDto testDishDto;
     private LocalDate testDate;
 
     @BeforeEach
     void setUp() {
         testDate = LocalDate.of(2024, 1, 15);
 
-        testUser = new UserDto(1L, "Test User");
-
-        testDish = new DishDto(100L, "Test Dish", 1, 1, 1, 1);
+        testUserDto = new UserDto(1L, "TestUser");
+        testDishDto = new DishDto(100L, "Test Dish", 100, 20, 10, 5);
 
         testMenu = new Menu();
         testMenu.setId(1L);
         testMenu.setMeal(Meal.BREAKFAST);
         testMenu.setDate(testDate);
-        existingMenu.setUserId(null);
-
-        existingMenu = new Menu();
-        existingMenu.setId(2L);
-        existingMenu.setMeal(Meal.LUNCH);
-        existingMenu.setDate(testDate.plusDays(1));
-        existingMenu.setUserId(null);
+        testMenu.setUserId(1L);
     }
 
     @Test
-    void save_ShouldSaveMenu_WhenMenuDoesNotExist() {
+    void save_ShouldSaveMenu_WhenMenuDoesNotExistAndUserExists() {
+        when(userServiceClient.getById(1L))
+                .thenReturn(Mono.just(testUserDto));
         when(menuRepository.findByMealAndDateAndUserId(
-                testMenu.getMeal(),
-                testMenu.getDate(),
-                testUser.id()
+                eq(Meal.BREAKFAST), eq(testDate), eq(1L)
         )).thenReturn(Mono.empty());
+        when(menuRepository.save(any(Menu.class)))
+                .thenReturn(Mono.just(testMenu));
 
-        when(menuRepository.save(testMenu)).thenReturn(Mono.just(testMenu));
+        StepVerifier.create(menuService.save(testMenu))
+                .expectNextMatches(savedMenu ->
+                        savedMenu.getId().equals(1L) &&
+                                savedMenu.getMeal() == Meal.BREAKFAST &&
+                                savedMenu.getUserId().equals(1L)
+                )
+                .verifyComplete();
 
-        Mono<Menu> savedMenu = menuService.save(testMenu);
-
-        assertNotNull(savedMenu);
-        assertEquals(testMenu.getId(), savedMenu.getId());
-        assertEquals(testMenu.getMeal(), savedMenu.getMeal());
-
+        verify(userServiceClient).getById(1L);
         verify(menuRepository).findByMealAndDateAndUserId(
-                testMenu.getMeal(),
-                testMenu.getDate(),
-                testUser.getId()
+                eq(Meal.BREAKFAST), eq(testDate), eq(1L)
         );
-        verify(menuRepository).save(testMenu);
-    }
-
-    @Test
-    void save_ShouldSaveGlobalMenu_WhenUserIsNull() {
-        Menu globalMenu = new Menu();
-        globalMenu.setId(3L);
-        globalMenu.setMeal(Meal.DINNER);
-        globalMenu.setDate(testDate);
-        globalMenu.setUser(null);
-
-        when(menuRepository.findByMealAndDateAndUserId(
-                Meal.DINNER,
-                testDate,
-                null
-        )).thenReturn(Optional.empty());
-
-        when(menuRepository.save(globalMenu)).thenReturn(globalMenu);
-
-        Menu savedMenu = menuService.save(globalMenu);
-
-        assertNotNull(savedMenu);
-        assertNull(savedMenu.getUser());
-
-        verify(menuRepository).findByMealAndDateAndUserId(
-                Meal.DINNER,
-                testDate,
-                null
-        );
+        verify(menuRepository).save(any(Menu.class));
     }
 
     @Test
     void save_ShouldThrowDataIntegrityViolationException_WhenMenuWithSameKeyExists() {
+        when(userServiceClient.getById(1L))
+                .thenReturn(Mono.just(testUserDto));
         when(menuRepository.findByMealAndDateAndUserId(
-                testMenu.getMeal(),
-                testMenu.getDate(),
-                testUser.getId()
-        )).thenReturn(Optional.of(existingMenu));
+                eq(Meal.BREAKFAST), eq(testDate), eq(1L)
+        )).thenReturn(Mono.just(testMenu));
+        when(menuRepository.save(any(Menu.class)))
+                .thenReturn(Mono.just(testMenu));
 
-        DataIntegrityViolationException exception = assertThrows(
-                DataIntegrityViolationException.class,
-                () -> menuService.save(testMenu)
-        );
+        StepVerifier.create(menuService.save(testMenu))
+                .expectErrorMatches(throwable ->
+                        throwable instanceof DataIntegrityViolationException &&
+                                throwable.getMessage().equals("Menu with given key already exists")
+                )
+                .verify();
+    }
 
-        assertEquals("Menu with given key already exists", exception.getMessage());
+    @Test
+    void save_ShouldPropagateError_WhenUserNotFound() {
+        when(userServiceClient.getById(1L))
+                .thenReturn(Mono.error(new ItemNotFoundException("User not found")));
 
-        verify(menuRepository).findByMealAndDateAndUserId(
-                testMenu.getMeal(),
-                testMenu.getDate(),
-                testUser.getId()
-        );
+        StepVerifier.create(menuService.save(testMenu))
+                .expectError(ItemNotFoundException.class)
+                .verify();
+
         verify(menuRepository, never()).save(any(Menu.class));
     }
 
     @Test
-    void update_ShouldThrowItemNotFoundException_WhenMenuDoesNotExist() {
+    void update_ShouldUpdateMenu_WhenMenuExistsAndNoKeyConflict() {
+        Menu updatedMenu = new Menu();
+        updatedMenu.setId(1L);
+        updatedMenu.setMeal(Meal.LUNCH);
+        updatedMenu.setDate(LocalDate.of(2024, 1, 16));
+        updatedMenu.setUserId(1L);
+
+        when(menuRepository.findById(1L))
+                .thenReturn(Mono.just(testMenu));
+        when(menuRepository.findByMealAndDateAndUserId(
+                eq(Meal.LUNCH), eq(LocalDate.of(2024, 1, 16)), eq(1L)
+        )).thenReturn(Mono.empty());
+        when(menuRepository.save(any(Menu.class)))
+                .thenReturn(Mono.just(updatedMenu));
+
+        StepVerifier.create(menuService.update(updatedMenu))
+                .verifyComplete();
+
+        verify(menuRepository).save(argThat(menu ->
+                menu.getMeal() == Meal.LUNCH &&
+                        menu.getDate().equals(LocalDate.of(2024, 1, 16))
+        ));
+    }
+
+    @Test
+    void update_ShouldThrowItemNotFoundException_WhenMenuNotFound() {
+        when(menuRepository.findById(999L))
+                .thenReturn(Mono.empty());
+
         Menu nonExistentMenu = new Menu();
         nonExistentMenu.setId(999L);
 
-        when(menuRepository.findById(999L)).thenReturn(Optional.empty());
-
-        ItemNotFoundException exception = assertThrows(
-                ItemNotFoundException.class,
-                () -> menuService.update(nonExistentMenu)
-        );
-
-        assertEquals("Menu with id 999 was not found", exception.getMessage());
-
-        verify(menuRepository).findById(999L);
-        verify(menuRepository, never()).findByMealAndDateAndUserId(any(), any(), any());
-        verify(menuRepository, never()).save(any(Menu.class));
+        StepVerifier.create(menuService.update(nonExistentMenu))
+                .expectErrorMatches(throwable ->
+                        throwable instanceof ItemNotFoundException &&
+                                throwable.getMessage().equals("Menu with id 999 was not found")
+                )
+                .verify();
     }
 
     @Test
-    void update_ShouldUpdateGlobalMenu() {
-        Menu globalMenu = new Menu();
-        globalMenu.setId(1L);
-        globalMenu.setMeal(Meal.BREAKFAST);
-        globalMenu.setDate(testDate);
-        globalMenu.setUser(null);
+    void update_ShouldThrowDataIntegrityViolationException_WhenNewKeyAlreadyExists() {
+        Menu existingMenuWithSameKey = new Menu();
+        existingMenuWithSameKey.setId(2L);
+        existingMenuWithSameKey.setMeal(Meal.LUNCH);
+        existingMenuWithSameKey.setDate(LocalDate.of(2024, 1, 16));
+        existingMenuWithSameKey.setUserId(1L);
 
-        Menu updatedGlobalMenu = new Menu();
-        updatedGlobalMenu.setId(1L);
-        updatedGlobalMenu.setMeal(Meal.LUNCH);
-        updatedGlobalMenu.setDate(testDate);
-        updatedGlobalMenu.setUser(null);
+        Menu updatedMenu = new Menu();
+        updatedMenu.setId(1L);
+        updatedMenu.setMeal(Meal.LUNCH);
+        updatedMenu.setDate(LocalDate.of(2024, 1, 16));
+        updatedMenu.setUserId(1L);
 
-        when(menuRepository.findById(1L)).thenReturn(Optional.of(globalMenu));
+        when(menuRepository.findById(1L))
+                .thenReturn(Mono.just(testMenu));
         when(menuRepository.findByMealAndDateAndUserId(
-                Meal.LUNCH,
-                testDate,
-                null
-        )).thenReturn(Optional.empty());
-        when(menuRepository.save(updatedGlobalMenu)).thenReturn(updatedGlobalMenu);
+                eq(Meal.LUNCH), eq(LocalDate.of(2024, 1, 16)), eq(1L)
+        )).thenReturn(Mono.just(existingMenuWithSameKey));
 
-        menuService.update(updatedGlobalMenu);
-
-        verify(menuRepository).save(updatedGlobalMenu);
+        StepVerifier.create(menuService.update(updatedMenu))
+                .expectErrorMatches(throwable ->
+                        throwable instanceof DataIntegrityViolationException &&
+                                throwable.getMessage().equals("Menu with given new key already exists")
+                )
+                .verify();
     }
 
     @Test
     void delete_ShouldDeleteMenu_WhenMenuExists() {
-        when(menuRepository.findById(1L)).thenReturn(Optional.of(testMenu));
-        doNothing().when(menuRepository).deleteById(1L);
+        when(menuRepository.findById(1L))
+                .thenReturn(Mono.just(testMenu));
+        when(menuRepository.deleteById(1L))
+                .thenReturn(Mono.empty());
 
-        menuService.delete(1L);
+        StepVerifier.create(menuService.delete(1L))
+                .verifyComplete();
 
-        verify(menuRepository).findById(1L);
         verify(menuRepository).deleteById(1L);
     }
 
     @Test
-    void delete_ShouldThrowItemNotFoundException_WhenMenuDoesNotExist() {
-        when(menuRepository.findById(999L)).thenReturn(Optional.empty());
+    void delete_ShouldThrowItemNotFoundException_WhenMenuNotFound() {
+        when(menuRepository.findById(999L))
+                .thenReturn(Mono.empty());
 
-        ItemNotFoundException exception = assertThrows(
-                ItemNotFoundException.class,
-                () -> menuService.delete(999L)
-        );
+        StepVerifier.create(menuService.delete(999L))
+                .expectErrorMatches(throwable ->
+                        throwable instanceof ItemNotFoundException &&
+                                throwable.getMessage().equals("Menu with id 999 was not found")
+                )
+                .verify();
 
-        assertEquals("Menu with id 999 was not found", exception.getMessage());
-
-        verify(menuRepository).findById(999L);
         verify(menuRepository, never()).deleteById(anyLong());
     }
 
     @Test
     void findById_ShouldReturnMenu_WhenMenuExists() {
-        when(menuRepository.findById(1L)).thenReturn(Optional.of(testMenu));
+        when(menuRepository.findById(1L))
+                .thenReturn(Mono.just(testMenu));
 
-        Menu foundMenu = menuService.findById(1L);
-
-        assertNotNull(foundMenu);
-        assertEquals(testMenu.getId(), foundMenu.getId());
-
-        verify(menuRepository).findById(1L);
+        StepVerifier.create(menuService.findById(1L))
+                .expectNext(testMenu)
+                .verifyComplete();
     }
 
     @Test
-    void findById_ShouldReturnNull_WhenMenuDoesNotExist() {
-        when(menuRepository.findById(999L)).thenReturn(Optional.empty());
+    void findById_ShouldReturnEmpty_WhenMenuDoesNotExist() {
+        when(menuRepository.findById(999L))
+                .thenReturn(Mono.empty());
 
-        Menu foundMenu = menuService.findById(999L);
-
-        assertNull(foundMenu);
-
-        verify(menuRepository).findById(999L);
+        StepVerifier.create(menuService.findById(999L))
+                .verifyComplete();
     }
 
     @Test
-    void findByKey_ShouldReturnMenu_WhenMenuExists() {
-        when(menuRepository.findByMealAndDateAndUserId(
-                Meal.BREAKFAST,
-                testDate,
-                1L
-        )).thenReturn(Optional.of(testMenu));
+    void includeDishToMenu_ShouldAddDish_WhenBothExistAndDishNotInMenu() {
+        when(menuRepository.findById(1L))
+                .thenReturn(Mono.just(testMenu));
+        when(menuDishesService.getDishesIdByMenuId(1L))
+                .thenReturn(Flux.empty());
+        when(dishServiceClient.getById(100L))
+                .thenReturn(Mono.just(testDishDto));
+        when(menuDishesService.saveByIds(1L, 100L))
+                .thenReturn(Mono.empty());
 
-        Menu foundMenu = menuService.findByKey(Meal.BREAKFAST, testDate, 1L);
+        StepVerifier.create(menuService.includeDishToMenu(100L, 1L))
+                .verifyComplete();
 
-        assertNotNull(foundMenu);
-        assertEquals(testMenu.getId(), foundMenu.getId());
-
-        verify(menuRepository).findByMealAndDateAndUserId(
-                Meal.BREAKFAST,
-                testDate,
-                1L
-        );
-    }
-
-    @Test
-    void findByKey_ShouldReturnGlobalMenu_WhenUserIdIsNull() {
-        Menu globalMenu = new Menu();
-        globalMenu.setId(3L);
-        globalMenu.setUser(null);
-
-        when(menuRepository.findByMealAndDateAndUserId(
-                Meal.DINNER,
-                testDate,
-                null
-        )).thenReturn(Optional.of(globalMenu));
-
-        Menu foundMenu = menuService.findByKey(Meal.DINNER, testDate, null);
-
-        assertNotNull(foundMenu);
-        assertNull(foundMenu.getUser());
-    }
-
-    @Test
-    void findByKey_ShouldReturnNull_WhenMenuDoesNotExist() {
-        when(menuRepository.findByMealAndDateAndUserId(
-                Meal.DINNER,
-                testDate,
-                999L
-        )).thenReturn(Optional.empty());
-
-        Menu foundMenu = menuService.findByKey(Meal.DINNER, testDate, 999L);
-
-        assertNull(foundMenu);
-    }
-
-    @Test
-    void includeDishToMenu_ShouldAddDish_WhenBothExist() {
-        when(menuRepository.findById(1L)).thenReturn(Optional.of(testMenu));
-        when(dishService.findById(100L)).thenReturn(testDish);
-        when(menuRepository.save(testMenu)).thenReturn(testMenu);
-
-        menuService.includeDishToMenu(100L, 1L);
-
-        assertTrue(testMenu.getDishes().contains(testDish));
-        verify(menuRepository).findById(1L);
-        verify(dishService).findById(100L);
-        verify(menuRepository).save(testMenu);
+        verify(menuDishesService).saveByIds(1L, 100L);
     }
 
     @Test
     void includeDishToMenu_ShouldThrowItemNotFoundException_WhenMenuNotFound() {
-        when(menuRepository.findById(999L)).thenReturn(Optional.empty());
+        when(menuRepository.findById(999L))
+                .thenReturn(Mono.empty());
 
-        ItemNotFoundException exception = assertThrows(
-                ItemNotFoundException.class,
-                () -> menuService.includeDishToMenu(100L, 999L)
-        );
-
-        assertEquals("Menu with id 999 was not found", exception.getMessage());
-
-        verify(menuRepository).findById(999L);
-        verify(dishService, never()).findById(anyLong());
+        StepVerifier.create(menuService.includeDishToMenu(100L, 999L))
+                .expectErrorMatches(throwable ->
+                        throwable instanceof ItemNotFoundException &&
+                                throwable.getMessage().equals("Menu with id 999 was not found")
+                )
+                .verify();
     }
 
     @Test
-    void includeDishToMenu_ShouldThrowItemNotFoundException_WhenDishNotFound() {
-        when(menuRepository.findById(1L)).thenReturn(Optional.of(testMenu));
-        when(dishService.findById(999L)).thenReturn(null);
+    void includeDishToMenu_ShouldThrowDataIntegrityViolationException_WhenDishAlreadyInMenu() {
+        when(menuRepository.findById(1L))
+                .thenReturn(Mono.just(testMenu));
+        when(menuDishesService.getDishesIdByMenuId(1L))
+                .thenReturn(Flux.just(100L));
 
-        ItemNotFoundException exception = assertThrows(
-                ItemNotFoundException.class,
-                () -> menuService.includeDishToMenu(999L, 1L)
-        );
+        StepVerifier.create(menuService.includeDishToMenu(100L, 1L))
+                .expectErrorMatches(throwable ->
+                        throwable instanceof DataIntegrityViolationException &&
+                                throwable.getMessage().equals("Dish with id 100 already in menu with id 1")
+                )
+                .verify();
 
-        assertEquals("Dish with id 999 was not found", exception.getMessage());
-
-        verify(menuRepository).findById(1L);
-        verify(dishService).findById(999L);
-        verify(menuRepository, never()).save(any(Menu.class));
+        verify(dishServiceClient, never()).getById(anyLong());
+        verify(menuDishesService, never()).saveByIds(anyLong(), anyLong());
     }
 
     @Test
-    void deleteDishFromMenu_ShouldRemoveDish_WhenBothExist() {
-        testMenu.getDishes().add(testDish);
+    void deleteDishFromMenu_ShouldRemoveDish_WhenBothExistAndDishInMenu() {
+        when(menuRepository.findById(1L))
+                .thenReturn(Mono.just(testMenu));
+        when(menuDishesService.getDishesIdByMenuId(1L))
+                .thenReturn(Flux.just(100L));
+        when(menuDishesService.deleteByIds(1L, 100L))
+                .thenReturn(Mono.empty());
 
-        when(menuRepository.findById(1L)).thenReturn(Optional.of(testMenu));
-        when(dishService.findById(100L)).thenReturn(testDish);
-        when(menuRepository.save(testMenu)).thenReturn(testMenu);
+        StepVerifier.create(menuService.deleteDishFromMenu(100L, 1L))
+                .verifyComplete();
 
-        menuService.deleteDishFromMenu(100L, 1L);
-
-        assertFalse(testMenu.getDishes().contains(testDish));
-        verify(menuRepository).findById(1L);
-        verify(dishService).findById(100L);
-        verify(menuRepository).save(testMenu);
+        verify(menuDishesService).deleteByIds(1L, 100L);
     }
 
     @Test
-    void deleteDishFromMenu_ShouldHandleNonExistentDishInMenu() {
-        when(menuRepository.findById(1L)).thenReturn(Optional.of(testMenu));
-        when(dishService.findById(100L)).thenReturn(testDish);
-        when(menuRepository.save(testMenu)).thenReturn(testMenu);
+    void deleteDishFromMenu_ShouldThrowItemNotFoundException_WhenDishNotInMenu() {
+        when(menuRepository.findById(1L))
+                .thenReturn(Mono.just(testMenu));
+        when(menuDishesService.getDishesIdByMenuId(1L))
+                .thenReturn(Flux.empty());
+        when(menuDishesService.deleteByIds(anyLong(), anyLong()))
+                .thenReturn(Mono.empty());
 
-        menuService.deleteDishFromMenu(100L, 1L);
+        StepVerifier.create(menuService.deleteDishFromMenu(100L, 1L))
+                .expectErrorMatches(throwable ->
+                        throwable instanceof ItemNotFoundException &&
+                                throwable.getMessage().equals("Dish with id 100 is not in menu with id 1")
+                )
+                .verify();
 
-        assertTrue(testMenu.getDishes().isEmpty());
-        verify(menuRepository).save(testMenu);
-    }
-
-    @Test
-    void deleteDishFromMenu_ShouldThrowItemNotFoundException_WhenMenuNotFound() {
-        when(menuRepository.findById(999L)).thenReturn(Optional.empty());
-
-        ItemNotFoundException exception = assertThrows(
-                ItemNotFoundException.class,
-                () -> menuService.deleteDishFromMenu(100L, 999L)
-        );
-
-        assertEquals("Menu with id 999 was not found", exception.getMessage());
+        verify(menuDishesService, never()).deleteByIds(anyLong(), anyLong());
     }
 
     @Test
     void makeListOfDishes_ShouldReturnDishes_WhenMenuExists() {
-        Dish dish2 = new Dish();
-        dish2.setId(200L);
-        dish2.setName("Another Dish");
+        when(menuRepository.findById(1L))
+                .thenReturn(Mono.just(testMenu));
+        when(menuDishesService.getDishesIdByMenuId(1L))
+                .thenReturn(Flux.just(100L));
+        when(dishServiceClient.getById(100L))
+                .thenReturn(Mono.just(testDishDto));
 
-        testMenu.getDishes().add(testDish);
-        testMenu.getDishes().add(dish2);
-
-        when(menuRepository.findById(1L)).thenReturn(Optional.of(testMenu));
-
-        List<Dish> dishes = menuService.makeListOfDishes(1L);
-
-        assertNotNull(dishes);
-        assertEquals(2, dishes.size());
-        assertTrue(dishes.contains(testDish));
-        assertTrue(dishes.contains(dish2));
-
-        verify(menuRepository).findById(1L);
+        StepVerifier.create(menuService.makeListOfDishes(1L))
+                .expectNext(testDishDto)
+                .verifyComplete();
     }
 
     @Test
-    void makeListOfDishes_ShouldReturnEmptyList_WhenMenuHasNoDishes() {
-        when(menuRepository.findById(1L)).thenReturn(Optional.of(testMenu));
+    void makeListOfDishes_ShouldReturnNotFoundDish_WhenDishServiceFails() {
+        when(menuRepository.findById(1L))
+                .thenReturn(Mono.just(testMenu));
+        when(menuDishesService.getDishesIdByMenuId(1L))
+                .thenReturn(Flux.just(999L));
+        when(dishServiceClient.getById(999L))
+                .thenReturn(Mono.error(new ItemNotFoundException("Dish not found")));
 
-        List<Dish> dishes = menuService.makeListOfDishes(1L);
-
-        assertNotNull(dishes);
-        assertTrue(dishes.isEmpty());
-    }
-
-    @Test
-    void makeListOfDishes_ShouldThrowItemNotFoundException_WhenMenuNotFound() {
-        when(menuRepository.findById(999L)).thenReturn(Optional.empty());
-
-        ItemNotFoundException exception = assertThrows(
-                ItemNotFoundException.class,
-                () -> menuService.makeListOfDishes(999L)
-        );
-
-        assertEquals("Menu with id 999 was not found", exception.getMessage());
+        StepVerifier.create(menuService.makeListOfDishes(1L))
+                .expectNextMatches(dish ->
+                        dish.id().equals(999L) &&
+                                dish.name().equals("(not found)")
+                )
+                .verifyComplete();
     }
 
     @Test
     void findAll_ShouldReturnPaginatedMenus() {
-        int page = 0;
-        int size = 10;
-        Pageable pageable = PageRequest.of(page, size);
+        Menu menu1 = new Menu();
+        menu1.setId(1L);
+        Menu menu2 = new Menu();
+        menu2.setId(2L);
 
-        List<Menu> menus = List.of(testMenu, existingMenu);
-        Page<Menu> pageResult = new PageImpl<>(menus, pageable, menus.size());
+        when(menuRepository.findAll())
+                .thenReturn(Flux.just(menu1, menu2));
 
-        when(menuRepository.findAll(pageable)).thenReturn(pageResult);
-
-        List<Menu> result = menuService.findAll(page, size);
-
-        assertNotNull(result);
-        assertEquals(2, result.size());
-        verify(menuRepository).findAll(pageable);
+        StepVerifier.create(menuService.findAll(0, 10))
+                .expectNext(menu1, menu2)
+                .verifyComplete();
     }
 
     @Test
-    void findAll_ShouldReturnEmptyList_WhenNoMenus() {
-        int page = 0;
-        int size = 10;
-        Pageable pageable = PageRequest.of(page, size);
-        Page<Menu> emptyPage = new PageImpl<>(new ArrayList<>(), pageable, 0);
+    void findAllByUsername_ShouldReturnMenusForUser() {
+        when(userServiceClient.getByName("TestUser"))
+                .thenReturn(Mono.just(testUserDto));
+        when(menuRepository.findAllByUserId(1L))
+                .thenReturn(Flux.just(testMenu));
 
-        when(menuRepository.findAll(pageable)).thenReturn(emptyPage);
-
-        List<Menu> result = menuService.findAll(page, size);
-
-        assertNotNull(result);
-        assertTrue(result.isEmpty());
+        StepVerifier.create(menuService.findAllByUsername("TestUser"))
+                .expectNext(testMenu)
+                .verifyComplete();
     }
 
     @Test
-    void update_ShouldHandleNullUserInExistingMenu() {
-        Menu menuWithNullUser = new Menu();
-        menuWithNullUser.setId(1L);
-        menuWithNullUser.setUser(null);
+    void findAllByUsername_ShouldPropagateError_WhenUserNotFound() {
+        when(userServiceClient.getByName("NonExistent"))
+                .thenReturn(Mono.error(new ItemNotFoundException("User not found")));
 
-        Menu updatedMenu = new Menu();
-        updatedMenu.setId(1L);
-        updatedMenu.setMeal(Meal.LUNCH);
-        updatedMenu.setDate(testDate);
-        updatedMenu.setUser(testUser);
-
-        when(menuRepository.findById(1L)).thenReturn(Optional.of(menuWithNullUser));
-        when(menuRepository.findByMealAndDateAndUserId(
-                Meal.LUNCH,
-                testDate,
-                testUser.getId()
-        )).thenReturn(Optional.empty());
-        when(menuRepository.save(updatedMenu)).thenReturn(updatedMenu);
-
-        menuService.update(updatedMenu);
-
-        verify(menuRepository).save(updatedMenu);
-    }
-
-    @Test
-    void update_ShouldHandleSettingUserToNull() {
-        Menu menuWithUser = new Menu();
-        menuWithUser.setId(1L);
-        menuWithUser.setUser(testUser);
-
-        Menu updatedMenu = new Menu();
-        updatedMenu.setId(1L);
-        updatedMenu.setMeal(Meal.LUNCH);
-        updatedMenu.setDate(testDate);
-        updatedMenu.setUser(null);
-
-        when(menuRepository.findById(1L)).thenReturn(Optional.of(menuWithUser));
-        when(menuRepository.findByMealAndDateAndUserId(
-                Meal.LUNCH,
-                testDate,
-                null
-        )).thenReturn(Optional.empty());
-        when(menuRepository.save(updatedMenu)).thenReturn(updatedMenu);
-
-        menuService.update(updatedMenu);
-
-        verify(menuRepository).save(updatedMenu);
-    }
-
-    @Test
-    void findByKey_ShouldHandleAllNullParameters() {
-        Menu result = menuService.findByKey(null, null, null);
-
-        assertNull(result);
-        verify(menuRepository).findByMealAndDateAndUserId(null, null, null);
+        StepVerifier.create(menuService.findAllByUsername("NonExistent"))
+                .expectError(ItemNotFoundException.class)
+                .verify();
     }
 }

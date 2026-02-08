@@ -1,6 +1,7 @@
 import org.itmo.user.accounter.model.entities.User;
 import org.itmo.user.accounter.repositories.UserRepository;
 import org.itmo.user.accounter.services.UserService;
+import org.itmo.user.accounter.utils.exceptions.DataIntegrityViolationException;
 import org.itmo.user.accounter.utils.exceptions.ItemNotFoundException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -41,18 +42,19 @@ class UserServiceTest {
         verify(userRepository).save(testUser);
     }
 
-//    @Test
-//    void save_ShouldFail_WhenUserWithSameNameExists() {
-//        when(userRepository.findByName(testUser.getName()))
-//                .thenReturn(Mono.just(existingUser));
-//
-//        StepVerifier.create(userService.save(testUser))
-//                .expectError(DataIntegrityViolationException.class)
-//                .verify();
-//
-//        verify(userRepository).findByName(testUser.getName());
-//        verify(userRepository, never()).save(any());
-//    }
+    @Test
+    void save_ShouldFail_WhenUserWithSameNameExists() {
+        when(userRepository.findByName(testUser.getName()))
+                .thenReturn(Mono.just(existingUser));
+        when(userRepository.save(any(User.class)))
+                .thenReturn(Mono.just(existingUser));
+
+        StepVerifier.create(userService.save(testUser))
+                .expectError(DataIntegrityViolationException.class)
+                .verify();
+
+        verify(userRepository).findByName(testUser.getName());
+    }
 
     @Test
     void update_ShouldUpdate_WhenUserExists() {

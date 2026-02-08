@@ -100,18 +100,20 @@ public class MenuService {
     }
 
     public Mono<Void> deleteDishFromMenu(Long dishId, Long menuId) {
-        return findById(menuId)
-                .switchIfEmpty(Mono.error(new ItemNotFoundException("Menu with id " + menuId.toString() + " was not found")))
-                .flatMap(menu -> menuDishesService.deleteByIds(menuId, dishId))
-                .flatMap(menu -> menuDishesService.getDishesIdByMenuId(menuId)
-                        .any(dishId::equals)
-                        .flatMap(res -> {
-                            if (res) {
-                                return menuDishesService.deleteByIds(menuId, dishId);
-                            } else {
-                                return Mono.error(new ItemNotFoundException("Dish with id " + dishId + "is not in menu with id " + menuId));
-                            }
-                        })
+        return menuRep.findById(menuId)
+                .switchIfEmpty(Mono.error(
+                        new ItemNotFoundException("Menu with id " + menuId + " was not found")
+                ))
+                .flatMap(menu ->
+                        menuDishesService.getDishesIdByMenuId(menuId)
+                                .any(dishId::equals)
+                                .flatMap(exists -> {
+                                    if (!exists) {
+                                        return Mono.error(new ItemNotFoundException(
+                                                "Dish with id " + dishId + " is not in menu with id " + menuId));
+                                    }
+                                    return menuDishesService.deleteByIds(menuId, dishId);
+                                })
                 )
                 .then();
     }
