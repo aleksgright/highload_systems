@@ -118,24 +118,6 @@ public class SwaggerAggregatorController {
         });
         merged.set("components", components);
 
-        ObjectNode securitySchemas = objectMapper.createObjectNode();
-        specs.forEach(spec -> {
-            if (spec.get("components") != null && spec.get("components").get("securitySchemes") != null) {
-                spec.get("components").get("securitySchemes").propertyStream().forEach(
-                        it -> securitySchemas.set(it.getKey(), it.getValue())
-                );
-            }
-        });
-        ((ObjectNode) merged.get("components")).set("securitySchemes", securitySchemas);
-
-        ArrayNode security = objectMapper.createArrayNode();
-        specs.forEach(spec -> {
-            if (spec.get("security") != null && security.isEmpty()) {
-                spec.get("security").values().forEachRemaining(security::add);
-            }
-        });
-        merged.set("security", security);
-
         return merged;
     }
 }
