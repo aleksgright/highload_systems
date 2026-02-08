@@ -8,6 +8,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.itmo.secs.model.dto.*;
 import org.itmo.secs.model.entities.Menu;
@@ -49,7 +50,7 @@ public class MenuController {
         })
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public Mono<MenuDto> create(@RequestBody MenuCreateDto menuDto) {
+    public Mono<MenuDto> create(@Valid @RequestBody MenuCreateDto menuDto) {
         return menuService.save(Objects.requireNonNull(conversionService.convert(menuDto, Menu.class)))
                 .flatMap(this::reactiveConvertMenuToMenuDto);
     }
@@ -70,9 +71,8 @@ public class MenuController {
         })
     @PutMapping
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public Mono<Void> update(@RequestBody MenuDto menuDto) {
-        menuService.update(Objects.requireNonNull(conversionService.convert(menuDto, Menu.class)));
-        return Mono.empty();
+    public Mono<Void> update(@Valid @RequestBody MenuDto menuDto) {
+        return menuService.update(Objects.requireNonNull(conversionService.convert(menuDto, Menu.class)));
     }
 
     @Operation(summary = "Удалить меню", description = "Удалить меню по id")
@@ -90,8 +90,7 @@ public class MenuController {
         @Parameter(description = "ID удаляемого меню", example = "1", required = true)
         @RequestParam(name="id") Long menuId
     ) {
-        menuService.delete(menuId);
-        return Mono.empty();
+        return menuService.delete(menuId);
     }
 
     @Operation(summary = "Найти меню", description = "При указании id ищет продукт по id, иначе возвращает список продуктов по указанной странице")
@@ -214,8 +213,7 @@ public class MenuController {
     @DeleteMapping("/dishes")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public Mono<Void> deleteDish(@RequestBody MenuDishDto dto) {
-        menuService.deleteDishFromMenu(dto.dishId(), dto.menuId());
-        return Mono.empty();
+        return menuService.deleteDishFromMenu(dto.dishId(), dto.menuId());
     }
 
     public Mono<MenuDto> reactiveConvertMenuToMenuDto(Menu menu) {
