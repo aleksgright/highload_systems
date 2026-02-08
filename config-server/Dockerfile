@@ -3,12 +3,12 @@ WORKDIR /config-server
 
 COPY build.gradle.kts ./
 
-RUN --mount=type=cache,id=gradle-cache-gateway,target=/home/gradle/.gradle \
+RUN --mount=type=cache,id=gradle-cache-config-server,target=/home/gradle/.gradle \
     gradle help --no-daemon
 
 COPY src src
 
-RUN --mount=type=cache,id=gradle-cache-gateway,target=/home/gradle/.gradle \
+RUN --mount=type=cache,id=gradle-cache-config-server,target=/home/gradle/.gradle \
     gradle build -x test --no-daemon
 
 FROM amazoncorretto:21
