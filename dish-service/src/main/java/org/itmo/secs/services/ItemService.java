@@ -41,7 +41,7 @@ public class ItemService {
                 .flatMap(orig -> findByName(item.getName())
                         .flatMap(x -> {
                             if (!Objects.equals(x.getId(), item.getId())) {
-                                return Mono.error(new DataIntegrityViolationException("Dish with name " + item.getName() + " already exist"));
+                                return Mono.error(new DataIntegrityViolationException("Item with name " + item.getName() + " already exist"));
                             } else {
                                 return Mono.just(orig);
                             }
