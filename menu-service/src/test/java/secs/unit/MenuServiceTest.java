@@ -11,6 +11,7 @@ import org.itmo.secs.services.MenuDishesService;
 import org.itmo.secs.services.MenuService;
 import org.itmo.secs.utils.exceptions.DataIntegrityViolationException;
 import org.itmo.secs.utils.exceptions.ItemNotFoundException;
+import org.itmo.secs.utils.exceptions.ServiceUnavailableException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -373,6 +374,28 @@ class MenuServiceTest {
 
         StepVerifier.create(menuService.findAllByUsername("NonExistent"))
                 .expectError(ItemNotFoundException.class)
+                .verify();
+    }
+
+    @Test
+    void makeListOfDishes_shouldHandleServiceUnavailableException() {
+        MenuService menuService = new MenuService(menuRepository, menuDishesService, dishServiceClient, null);
+        Long menuId = 1L;
+        Menu menu = new Menu();
+        menu.setId(menuId);
+
+        when(menuRepository.findById(menuId)).thenReturn(Mono.just(menu));
+        when(menuDishesService.getDishesIdByMenuId(menuId))
+                .thenReturn(Flux.just(10L));
+
+        when(dishServiceClient.getById(anyLong()))
+                .thenAnswer(invocation -> {
+                    Long dishId = invocation.getArgument(0);
+                    return Mono.error(new ServiceUnavailableException("Service unavailable for dish " + dishId));
+                });
+
+        StepVerifier.create(menuService.makeListOfDishes(menuId))
+                .expectError(ServiceUnavailableException.class)
                 .verify();
     }
 }

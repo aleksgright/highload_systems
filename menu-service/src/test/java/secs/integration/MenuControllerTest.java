@@ -260,13 +260,16 @@ class MenuControllerTest {
     @Test
     void deleteMenu_success() {
         MenuDto created = webTestClient.post().uri("/menu").contentType(MediaType.APPLICATION_JSON).bodyValue(new MenuCreateDto(Meal.BREAKFAST.toString(), 1L, LocalDate.of(2024, 1, 15))).exchange().expectStatus().isCreated().expectBody(MenuDto.class).returnResult().getResponseBody();
-        webTestClient.delete().uri("/menu?id=" + created.id()).exchange().expectStatus().isNoContent();
+        webTestClient.delete()
+                .uri("/menu?id=" + created.id())
+                .exchange().expectStatus().isNoContent();
         webTestClient.get().uri("/menu?id=" + created.id()).exchange().expectStatus().isNotFound();
     }
 
     @Test
     void deleteMenu_notFound_404() {
-        webTestClient.delete().uri("/menu?id=99999").exchange().expectStatus().isNotFound();
+        webTestClient.delete().uri("/menu?id=99999")
+                .exchange().expectStatus().isNotFound();
     }
 
     @Test
@@ -274,5 +277,31 @@ class MenuControllerTest {
         List<MenuDto> menus = getAllMenus();
 
         assertThat(menus).isEmpty();
+    }
+
+    @Test
+    void addDish_dishNotFound_shouldReturn404() {
+        // Given
+        MenuDto menu = createMenu(createDto);
+
+        // Mock dishServiceClient to return error for non-existent dish
+        when(dishServiceClient.getById(99999L))
+                .thenReturn(Mono.error(new org.itmo.secs.utils.exceptions.ItemNotFoundException("Dish not found")));
+
+        MenuDishDto addDishRequest = new MenuDishDto(menu.id(), 99999L);
+
+        // When & Then
+        webTestClient.put()
+                .uri("/menu/dishes")
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(addDishRequest)
+                .exchange()
+                .expectStatus().isNotFound()
+                .expectBody(ErrorDto.class)
+                .consumeWith(response -> {
+                    ErrorDto error = response.getResponseBody();
+                    assert error != null;
+                    assert error.message().contains("Dish with id 99999 was not found");
+                });
     }
 }

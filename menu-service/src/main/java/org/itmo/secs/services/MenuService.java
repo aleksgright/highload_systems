@@ -93,7 +93,8 @@ public class MenuService {
                         })
                 )
                 .flatMap(menu -> dishServiceClient.getById(dishId)
-                        .onErrorResume(Mono::error)
+                        .onErrorMap(ItemNotFoundException.class,
+                                ex ->new ItemNotFoundException("Dish with id " + dishId + " was not found"))
                         .flatMap((dish) -> menuDishesService.saveByIds(menuId, dishId))
                 )
                 .then();

@@ -15,8 +15,10 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
+import org.springframework.http.MediaType;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
+import org.springframework.test.web.reactive.server.WebTestClient;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
@@ -51,6 +53,9 @@ public class DishControllerTest {
         registry.add("app.max-page-size", () -> "10");
         registry.add("app.default-page-size", () -> "5");
     }
+
+    @Autowired
+    private WebTestClient webTestClient;
 
     @Autowired
     private ItemRepository itemRepository;
@@ -101,12 +106,14 @@ public class DishControllerTest {
 
         DishCreateDto dto = new DishCreateDto("NEW_DISH");
 
-        RestAssured.given()
-                .contentType("application/json")
-                .body(gson.toJson(dto))
-                .post("/dish")
-                .then()
-                .statusCode(201);
+        webTestClient.post()
+                .uri("/dish")
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(dto)
+                .exchange()
+                .expectStatus().isCreated()
+                .expectBody()
+                .jsonPath("$.name").isEqualTo(dto.name());
 
         assertTrue(dishRepository.findByName("NEW_DISH").isPresent());
     }
@@ -118,12 +125,12 @@ public class DishControllerTest {
         DishUpdateNameDto dto =
                 new DishUpdateNameDto(dishes.get(0).getId(), "NEW_NAME");
 
-        RestAssured.given()
-                .contentType("application/json")
-                .body(gson.toJson(dto))
-                .put("/dish")
-                .then()
-                .statusCode(204);
+        webTestClient.put()
+                .uri("/dish")
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(dto)
+                .exchange()
+                .expectStatus().isNoContent();
 
         assertEquals(
                 "NEW_NAME",
@@ -132,38 +139,66 @@ public class DishControllerTest {
     }
 
     @Test
-    void testFind() {
+    void testFindById() {
         Dish first = dishes.get(0);
 
-        RestAssured.given()
-                .param("id", first.getId())
-                .get("/dish")
-                .then()
-                .statusCode(200);
+        webTestClient.get()
+                .uri(uriBuilder -> uriBuilder
+                        .path("/dish")
+                        .queryParam("id", first.getId())
+                        .build())
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody()
+                .jsonPath("$.id").isEqualTo(first.getId().toString())
+                .jsonPath("$.name").isEqualTo(first.getName());
+    }
 
-        RestAssured.given()
-                .param("name", first.getName())
-                .get("/dish")
-                .then()
-                .statusCode(200);
+    @Test
+    void testFindByName() {
+        Dish first = dishes.get(0);
 
-        RestAssured.given()
-                .param("pnumber", 0)
-                .param("psize", 2)
-                .get("/dish")
-                .then()
-                .statusCode(200);
+        webTestClient.get()
+                .uri(uriBuilder -> uriBuilder
+                        .path("/dish")
+                        .queryParam("name", first.getName())
+                        .build())
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody()
+                .jsonPath("$.id").isEqualTo(first.getId().toString())
+                .jsonPath("$.name").isEqualTo(first.getName());
+    }
+
+    @Test
+    void testFindAllWithPagination() {
+        webTestClient.get()
+                .uri(uriBuilder -> uriBuilder
+                        .path("/dish")
+                        .queryParam("pnumber", 0)
+                        .queryParam("psize", 2)
+                        .build())
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody()
+                .jsonPath("$.length()").isEqualTo(2) // Проверяем длину массива
+                .jsonPath("$[0].id").isEqualTo(dishes.get(0).getId().toString())
+                .jsonPath("$[0].name").isEqualTo(dishes.get(0).getName())
+                .jsonPath("$[1].id").isEqualTo(dishes.get(1).getId().toString())
+                .jsonPath("$[1].name").isEqualTo(dishes.get(1).getName());
     }
 
     @Test
     void testDelete() {
         Dish dish = dishes.get(0);
 
-        RestAssured.given()
-                .param("id", dish.getId())
-                .delete("/dish")
-                .then()
-                .statusCode(204);
+        webTestClient.delete()
+                .uri(uriBuilder -> uriBuilder
+                        .path("/dish")
+                        .queryParam("id", dish.getId())
+                        .build())
+                .exchange()
+                .expectStatus().isNoContent();
 
         assertFalse(dishRepository.existsById(dish.getId()));
     }
@@ -175,14 +210,14 @@ public class DishControllerTest {
         Dish dish = dishes.get(0);
         Item item = items.get(0);
 
-        var dto = new DishAddItemDto(item.getId(), dish.getId(), 50);
+        DishAddItemDto dto = new DishAddItemDto(item.getId(), dish.getId(), 50);
 
-        RestAssured.given()
-                .contentType("application/json")
-                .body(gson.toJson(dto))
-                .put("/dish/items")
-                .then()
-                .statusCode(204);
+        webTestClient.put()
+                .uri("/dish/items")
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(dto)
+                .exchange()
+                .expectStatus().isNoContent();
     }
 //    @Test
 //    void testDelete() {
