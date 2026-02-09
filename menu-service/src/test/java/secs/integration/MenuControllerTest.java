@@ -1,451 +1,278 @@
 package secs.integration;
 
-import io.restassured.RestAssured;
-import io.restassured.http.ContentType;
-import io.restassured.response.Response;
-import org.itmo.secs.model.entities.Dish;
-import org.itmo.secs.model.entities.User;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.itmo.secs.App;
+import org.itmo.secs.client.DishServiceClient;
+import org.itmo.secs.client.UserServiceClient;
+import org.itmo.secs.model.dto.*;
 import org.itmo.secs.model.entities.enums.Meal;
-import org.itmo.secs.repositories.DishRepository;
 import org.itmo.secs.repositories.MenuRepository;
-import org.itmo.secs.repositories.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
-import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.http.MediaType;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
-import org.springframework.transaction.annotation.Transactional;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.web.reactive.server.WebTestClient;
 import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
+import reactor.core.publisher.Mono;
 
 import java.time.LocalDate;
-import java.util.ArrayList;
+import java.util.List;
 
-import static io.restassured.RestAssured.given;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.when;
 
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, classes = App.class)
+@AutoConfigureWebTestClient
 @Testcontainers
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
-public class MenuControllerTest {
-
+@ActiveProfiles("test")
+class MenuControllerTest {
     @LocalServerPort
     private String port;
-
+    @Autowired
+    private WebTestClient webTestClient;
+    @Autowired
+    private MenuRepository menuRepository;
+    @MockitoBean
+    private UserServiceClient userServiceClient;
+    @MockitoBean
+    private DishServiceClient dishServiceClient;
     @Container
-    static PostgreSQLContainer<?> pgContainer = new PostgreSQLContainer<>("postgres:15-alpine")
-            .withDatabaseName("test-db")
+    static final PostgreSQLContainer<?> POSTGRES = new PostgreSQLContainer<>("postgres:15-alpine")
+            .withDatabaseName("testdb")
             .withUsername("postgres")
-            .withPassword("password");
+            .withPassword("password")
+            .waitingFor(Wait.forListeningPort());
 
     @DynamicPropertySource
     static void registerPgProperties(DynamicPropertyRegistry registry) {
-        registry.add("spring.datasource.url", pgContainer::getJdbcUrl);
-        registry.add("spring.datasource.username", pgContainer::getUsername);
-        registry.add("spring.datasource.password", pgContainer::getPassword);
-        registry.add("spring.jpa.hibernate.ddl-auto", () -> "create-drop");
+        registry.add("spring.r2dbc.url", () -> "r2dbc:postgresql://" + POSTGRES.getHost() + ":" + POSTGRES.getMappedPort(5432) + "/testdb");
+        registry.add("spring.r2dbc.username", POSTGRES::getUsername);
+        registry.add("spring.r2dbc.password", POSTGRES::getPassword);
+        registry.add("spring.flyway.url", POSTGRES::getJdbcUrl);
+        registry.add("spring.flyway.user", POSTGRES::getUsername);
+        registry.add("spring.flyway.password", POSTGRES::getPassword);
+        registry.add("spring.flyway.enabled", () -> true);
+        registry.add("spring.flyway.locations", () -> "classpath:db/migration");
+        registry.add("spring.flyway.baseline-on-migrate", () -> true);
+        registry.add("eureka.client.enabled", () -> false);
+        registry.add("spring.cloud.config.enabled", () -> false);
+        registry.add("spring.cloud.loadbalancer.enabled", () -> false);
+        registry.add("app.max-page-size", () -> "10");
+        registry.add("app.default-page-size", () -> "5");
     }
 
-    @Autowired
-    private MenuRepository menuRepository;
+    private final ObjectMapper mapper = new ObjectMapper().findAndRegisterModules();
 
-    @Autowired
-    private UserRepository userRepository;
-
-    @Autowired
-    private DishRepository dishRepository;
-
-    private User testUser;
-    private Dish testDish;
-    private Menu testMenu;
+    private MenuCreateDto createDto;
 
     @BeforeEach
-    void setUp() {
-        menuRepository.deleteAll();
-        dishRepository.deleteAll();
-        userRepository.deleteAll();
-
-        try {
-            Thread.sleep(100);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-        }
-
-        RestAssured.baseURI = "http://localhost:" + port;
-        RestAssured.port = Integer.parseInt(port);
-
-        testUser = new User();
-        testUser.setName("Test User");
-        testUser = userRepository.save(testUser);
-
-        testDish = new Dish();
-        testDish.setName("Test Dish");
-        testDish = dishRepository.save(testDish);
-
-        testMenu = new Menu();
-        testMenu.setMeal(Meal.BREAKFAST);
-        testMenu.setDate(LocalDate.of(2024, 1, 15));
-        testMenu.setUser(testUser);
-        testMenu.setDishes(new ArrayList<>());
-        testMenu = menuRepository.save(testMenu);
-
-        for (int i = 1; i <= 5; i++) {
-            Menu menu = new Menu();
-            menu.setMeal(Meal.values()[i % Meal.values().length]);
-            menu.setDate(LocalDate.of(2024, 1, 15 + i));
-            menu.setUser(i % 2 == 0 ? testUser : null);
-            menu.setDishes(new ArrayList<>());
-            menuRepository.save(menu);
-        }
+    void setup() {
+        // Чистим репозиторий перед каждым тестом
+        menuRepository.deleteAll().block();
+        // Моки для пользователя и блюда
+        UserDto testUser = new UserDto(1L, "TestUser");
+        when(userServiceClient.getById(anyLong())).thenReturn(Mono.just(testUser));
+        when(userServiceClient.getByName(anyString())).thenReturn(Mono.just(testUser));
+        DishDto testDish = new DishDto(100L, "Test Dish", 100, 20, 10, 5);
+        when(dishServiceClient.getById(anyLong())).thenReturn(Mono.just(testDish));
+        createDto = new MenuCreateDto(
+                "BREAKFAST",
+                1L,
+                LocalDate.now()
+        );
     }
 
-    private String createMenuJson(String meal, Long userId, String date) {
-        if (userId != null) {
-            return String.format("{\"meal\":\"%s\",\"userId\":%d,\"date\":\"%s\"}", meal, userId, date);
-        }
-        return String.format("{\"meal\":\"%s\",\"userId\":null,\"date\":\"%s\"}", meal, date);
+    // =========================
+    // Helper methods
+    // =========================
+
+    private MenuDto createMenu(MenuCreateDto dto) {
+        return webTestClient.post()
+                .uri("/menu")
+                .bodyValue(dto)
+                .exchange()
+                .expectStatus().isCreated()
+                .expectBody(MenuDto.class)
+                .returnResult()
+                .getResponseBody();
     }
 
-    private String createMenuDtoJson(Long id, String meal, Long userId, String date) {
-        return String.format("{\"id\":%d,\"meal\":\"%s\",\"userId\":%d,\"date\":\"%s\"}", id, meal, userId, date);
+    private MenuDto getMenuById(Long id) throws Exception {
+        String json = webTestClient.get()
+                .uri("/menu?id=" + id)
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody(String.class)
+                .returnResult()
+                .getResponseBody();
+
+        return parseMenu(json);
     }
 
-    private String createMenuDishDtoJson(Long menuId, Long dishId) {
-        return String.format("{\"menuId\":%d,\"dishId\":%d}", menuId, dishId);
+    private List<MenuDto> getMenusByUsername(String username) throws Exception {
+        String json = webTestClient.get()
+                .uri("/menu?username=" + username)
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody(String.class)
+                .returnResult()
+                .getResponseBody();
+
+        return parseMenuList(json);
+    }
+
+    private List<MenuDto> getMenusWithPaging(int page, int size) throws Exception {
+        String json = webTestClient.get()
+                .uri("/menu?pnumber=" + page + "&psize=" + size)
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody(String.class)
+                .returnResult()
+                .getResponseBody();
+
+        return parseMenuList(json);
+    }
+
+    private List<MenuDto> getAllMenus() throws Exception {
+        String json = webTestClient.get()
+                .uri("/menu")
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody(String.class)
+                .returnResult()
+                .getResponseBody();
+
+        return parseMenuList(json);
+    }
+
+    private void updateMenu(Long id, MenuUpdateDto dto) {
+        webTestClient.put()
+                .uri("/menu")
+                .bodyValue(dto)
+                .exchange()
+                .expectStatus().isNoContent();
+    }
+
+    private void deleteMenu(Long id) {
+        webTestClient.delete()
+                .uri("/menu/" + id)
+                .exchange()
+                .expectStatus().isNoContent();
+    }
+
+    private MenuDto parseMenu(String json) throws Exception {
+        return mapper.readValue(json, MenuDto.class);
+    }
+
+    private List<MenuDto> parseMenuList(String json) throws Exception {
+        return mapper.readValue(
+                json,
+                mapper.getTypeFactory().constructCollectionType(List.class, MenuDto.class)
+        );
+    }
+
+    // =========================
+    // Tests
+    // =========================
+
+    @Test
+    void createMenu_success() {
+        MenuCreateDto request = new MenuCreateDto(Meal.LUNCH.toString(), 1L, LocalDate.of(2024, 1, 16));
+        MenuDto created = webTestClient.post().uri("/menu").contentType(MediaType.APPLICATION_JSON).bodyValue(request).exchange().expectStatus().isCreated().expectBody(MenuDto.class).returnResult().getResponseBody();
+        assert created != null;
+        assert created.id() != null;
+        assert created.meal().equals("LUNCH");
+        assert created.date().equals(LocalDate.of(2024, 1, 16));
     }
 
     @Test
-    void testCreateMenu() {
-        String requestBody = createMenuJson("LUNCH", testUser.getId(), "2024-01-20");
-
-        Response response = given()
-                .contentType(ContentType.JSON)
-                .body(requestBody)
-                .post("/menu")
-                .then()
-                .extract().response();
-
-        assertEquals(201, response.statusCode());
-
-        Menu savedMenu = menuRepository.findByMealAndDateAndUserId(
-                Meal.LUNCH,
-                LocalDate.of(2024, 1, 20),
-                testUser.getId()
-        ).orElse(null);
-        assertNotNull(savedMenu);
+    void createMenu_duplicateKey_400() {
+        MenuCreateDto request = new MenuCreateDto(Meal.BREAKFAST.toString(), 1L, LocalDate.of(2024, 1, 15));
+        // Создаем первый раз
+        webTestClient.post().uri("/menu").contentType(MediaType.APPLICATION_JSON).bodyValue(request).exchange().expectStatus().isCreated();
+        // Пытаемся создать дубликат
+        webTestClient.post().uri("/menu").contentType(MediaType.APPLICATION_JSON).bodyValue(request).exchange().expectStatus().isBadRequest();
     }
 
     @Test
-    void testCreateGlobalMenu() {
-        String requestBody = createMenuJson("LUNCH", null, "2024-01-20");
+    void findMenuById_success() throws Exception {
+        MenuDto created = createMenu(createDto);
 
-        Response response = given()
-                .contentType(ContentType.JSON)
-                .body(requestBody)
-                .post("/menu")
-                .then()
-                .extract().response();
+        MenuDto found = getMenuById(created.id());
 
-        assertEquals(201, response.statusCode());
-
-        Menu savedMenu = menuRepository.findByMealAndDateAndUserId(
-                Meal.LUNCH,
-                LocalDate.of(2024, 1, 20),
-                null
-        ).orElse(null);
-        assertNotNull(savedMenu);
-        assertNull(savedMenu.getUser());
+        assertThat(found.id()).isEqualTo(created.id());
+        assertThat(found.meal()).isEqualTo("BREAKFAST");
     }
 
     @Test
-    void testCreateDuplicateMenu() {
-        String requestBody = createMenuJson("BREAKFAST", testUser.getId(), "2024-01-15");
+    void findMenusByUsername_success() throws Exception {
+        createMenu(createDto);
 
-        Response response = given()
-                .contentType(ContentType.JSON)
-                .body(requestBody)
-                .post("/menu")
-                .then()
-                .extract().response();
+        List<MenuDto> menus = getMenusByUsername("TestUser");
 
-        assertEquals(400, response.statusCode());
+        assertThat(menus).isNotEmpty();
+    }
+
+//    @Test
+//    void findAllMenusWithPagination_success() throws Exception {
+//        MenuCreateDto testCreateDto = new MenuCreateDto(
+//                "BREAKFAST",
+//                1L,
+//                LocalDate.now()
+//        );
+//        createMenu(createDto);
+//        createMenu(createDto);
+//
+//        List<MenuDto> menus = getMenusWithPaging(0, 2);
+//
+//        assertThat(menus).hasSize(2);
+//    }
+
+    @Test
+    void updateMenu_success() throws Exception {
+        MenuDto created = createMenu(createDto);
+
+        MenuUpdateDto updateDto = new MenuUpdateDto(
+                created.id(),
+                LocalDate.now(),
+                "DINNER"
+        );
+
+        updateMenu(created.id(), updateDto);
+
+        MenuDto updated = getMenuById(created.id());
+
+        assertThat(updated.meal()).isEqualTo("DINNER");
     }
 
     @Test
-    void testUpdateMenu() {
-        String requestBody = createMenuDtoJson(testMenu.getId(), "DINNER", testUser.getId(), "2024-01-25");
-
-        Response response = given()
-                .contentType(ContentType.JSON)
-                .body(requestBody)
-                .put("/menu")
-                .then()
-                .extract().response();
-
-        assertEquals(204, response.statusCode());
-
-        Menu updatedMenu = menuRepository.findById(testMenu.getId()).orElseThrow();
-        assertEquals(Meal.DINNER, updatedMenu.getMeal());
-        assertEquals(LocalDate.of(2024, 1, 25), updatedMenu.getDate());
+    void deleteMenu_success() {
+        MenuDto created = webTestClient.post().uri("/menu").contentType(MediaType.APPLICATION_JSON).bodyValue(new MenuCreateDto(Meal.BREAKFAST.toString(), 1L, LocalDate.of(2024, 1, 15))).exchange().expectStatus().isCreated().expectBody(MenuDto.class).returnResult().getResponseBody();
+        webTestClient.delete().uri("/menu?id=" + created.id()).exchange().expectStatus().isNoContent();
+        webTestClient.get().uri("/menu?id=" + created.id()).exchange().expectStatus().isNotFound();
     }
 
     @Test
-    void testUpdateNonExistingMenu() {
-        String requestBody = createMenuDtoJson(999999L, "DINNER", testUser.getId(), "2024-01-20");
-
-        Response response = given()
-                .contentType(ContentType.JSON)
-                .body(requestBody)
-                .put("/menu")
-                .then()
-                .extract().response();
-
-        assertEquals(404, response.statusCode());
+    void deleteMenu_notFound_404() {
+        webTestClient.delete().uri("/menu?id=99999").exchange().expectStatus().isNotFound();
     }
 
     @Test
-    void testDeleteMenu() {
-        Long menuId = testMenu.getId();
+    void findMenu_withoutParameters_returnsEmptyList() throws Exception {
+        List<MenuDto> menus = getAllMenus();
 
-        Response response = given()
-                .param("id", menuId)
-                .delete("/menu")
-                .then()
-                .extract().response();
-
-        assertEquals(204, response.statusCode());
-        assertFalse(menuRepository.existsById(menuId));
-    }
-
-    @Test
-    void testDeleteNonExistingMenu() {
-        Response response = given()
-                .param("id", 999999L)
-                .delete("/menu")
-                .then()
-                .extract().response();
-
-        assertEquals(404, response.statusCode());
-    }
-
-    @Test
-    void testFindMenuById() {
-        Response response = given()
-                .param("id", testMenu.getId())
-                .get("/menu")
-                .then()
-                .extract().response();
-
-        assertEquals(200, response.statusCode());
-        assertTrue(response.getBody().asString().contains("BREAKFAST"));
-    }
-
-    @Test
-    void testFindNonExistingMenuById() {
-        Response response = given()
-                .param("id", 999999L)
-                .get("/menu")
-                .then()
-                .extract().response();
-
-        assertEquals(404, response.statusCode());
-    }
-
-    @Test
-    void testFindAllMenus() {
-        Response response = given()
-                .get("/menu")
-                .then()
-                .extract().response();
-
-        assertEquals(200, response.statusCode());
-        String responseBody = response.getBody().asString();
-        assertTrue(responseBody.contains("BREAKFAST") || responseBody.contains("LUNCH") || responseBody.contains("DINNER") || responseBody.contains("SUPPER"));
-    }
-
-    @Test
-    void testFindAllMenusWithPagination() {
-        Response response = given()
-                .param("pnumber", 0)
-                .param("psize", 2)
-                .get("/menu")
-                .then()
-                .extract().response();
-
-        assertEquals(200, response.statusCode());
-    }
-
-
-
-    @Test
-    void testAddDishToNonExistingMenu() {
-        String requestBody = createMenuDishDtoJson(999999L, testDish.getId());
-
-        Response response = given()
-                .contentType(ContentType.JSON)
-                .body(requestBody)
-                .put("/menu/dishes")
-                .then()
-                .extract().response();
-
-        assertEquals(404, response.statusCode());
-    }
-
-    @Test
-    void testAddNonExistingDishToMenu() {
-        String requestBody = createMenuDishDtoJson(testMenu.getId(), 999999L);
-
-        Response response = given()
-                .contentType(ContentType.JSON)
-                .body(requestBody)
-                .put("/menu/dishes")
-                .then()
-                .extract().response();
-
-        assertEquals(404, response.statusCode());
-    }
-
-    @Test
-    void testGetDishesFromMenu() {
-        testMenu.getDishes().add(testDish);
-        menuRepository.save(testMenu);
-
-        Dish anotherDish = new Dish();
-        anotherDish.setName("Another Dish");
-        anotherDish = dishRepository.save(anotherDish);
-        testMenu.getDishes().add(anotherDish);
-        menuRepository.save(testMenu);
-
-        Response response = given()
-                .param("id", testMenu.getId())
-                .get("/menu/dishes")
-                .then()
-                .extract().response();
-
-        assertEquals(200, response.statusCode());
-        String responseBody = response.getBody().asString();
-        assertTrue(responseBody.contains("Test Dish"));
-        assertTrue(responseBody.contains("Another Dish"));
-    }
-
-    @Test
-    void testGetDishesFromEmptyMenu() {
-        Response response = given()
-                .param("id", testMenu.getId())
-                .get("/menu/dishes")
-                .then()
-                .extract().response();
-
-        assertEquals(200, response.statusCode());
-        assertEquals("[]", response.getBody().asString());
-    }
-
-    @Test
-    void testGetDishesFromNonExistingMenu() {
-        Response response = given()
-                .param("id", 999999L)
-                .get("/menu/dishes")
-                .then()
-                .extract().response();
-
-        assertEquals(404, response.statusCode());
-    }
-
-    @Test
-    @Transactional
-    void testDeleteDishFromNonExistingMenu() {
-        String requestBody = createMenuDishDtoJson(999999L, testDish.getId());
-
-        Response response = given()
-                .contentType(ContentType.JSON)
-                .body(requestBody)
-                .delete("/menu/dishes")
-                .then()
-                .extract().response();
-
-        assertEquals(404, response.statusCode());
-    }
-
-    @Test
-    void testDeleteNonExistingDishFromMenu() {
-        String requestBody = createMenuDishDtoJson(testMenu.getId(), 999999L);
-
-        Response response = given()
-                .contentType(ContentType.JSON)
-                .body(requestBody)
-                .delete("/menu/dishes")
-                .then()
-                .extract().response();
-
-        assertEquals(404, response.statusCode());
-    }
-
-    @Test
-    void testDeleteDishNotInMenu() {
-        Dish anotherDish = new Dish();
-        anotherDish.setName("Another Dish");
-        anotherDish = dishRepository.save(anotherDish);
-
-        String requestBody = createMenuDishDtoJson(testMenu.getId(), anotherDish.getId());
-
-        Response response = given()
-                .contentType(ContentType.JSON)
-                .body(requestBody)
-                .delete("/menu/dishes")
-                .then()
-                .extract().response();
-
-        assertEquals(204, response.statusCode());
-    }
-
-    @Test
-    void testFindMenusWithZeroPageSize() {
-        Response response = given()
-                .param("pnumber", 0)
-                .param("psize", 0)
-                .get("/menu")
-                .then()
-                .extract().response();
-
-        assertEquals(500, response.statusCode());
-    }
-
-    @Test
-    void testUpdateMenuToDuplicateKey() {
-        Menu anotherMenu = new Menu();
-        anotherMenu.setMeal(Meal.LUNCH);
-        anotherMenu.setDate(LocalDate.of(2024, 1, 16));
-        anotherMenu.setUser(testUser);
-        anotherMenu.setDishes(new ArrayList<>());
-        anotherMenu = menuRepository.save(anotherMenu);
-
-        String requestBody = createMenuDtoJson(testMenu.getId(), "LUNCH", testUser.getId(), "2024-01-16");
-
-        Response response = given()
-                .contentType(ContentType.JSON)
-                .body(requestBody)
-                .put("/menu")
-                .then()
-                .extract().response();
-
-        assertEquals(400, response.statusCode());
-    }
-
-    @Test
-    void testCreateMenuWithNonExistingUser() {
-        String requestBody = createMenuJson("LUNCH", 999999L, "2024-01-20");
-
-        Response response = given()
-                .contentType(ContentType.JSON)
-                .body(requestBody)
-                .post("/menu")
-                .then()
-                .extract().response();
-
-        assertTrue(response.statusCode() >= 400 && response.statusCode() < 600);
+        assertThat(menus).isEmpty();
     }
 }

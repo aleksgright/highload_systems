@@ -41,14 +41,23 @@ public class ItemService {
                 .flatMap(orig -> findByName(item.getName())
                         .flatMap(x -> {
                             if (!Objects.equals(x.getId(), item.getId())) {
-                                return Mono.error(new DataIntegrityViolationException("Item with name " + item.getName() + " already exist"));
+                                return Mono.error(new DataIntegrityViolationException("Item with name " + item.getName() + " already exists"));
                             } else {
                                 return Mono.just(orig);
                             }
                         })
                         .switchIfEmpty(Mono.just(orig))
                 )
-                .map(x -> itemRepository.save(item)).then();
+                .flatMap(orig -> {
+                    // Update the original item's fields
+                    orig.setName(item.getName());
+                    orig.setCalories(item.getCalories());
+                    orig.setProtein(item.getProtein());
+                    orig.setFats(item.getFats());
+                    orig.setCarbs(item.getCarbs());
+                    return Mono.just(itemRepository.save(orig));
+                })
+                .then();
     }
 
     public Mono<Item> findById(Long id) {
@@ -73,7 +82,7 @@ public class ItemService {
     @Transactional(isolation=Isolation.SERIALIZABLE)
     public Mono<Void> delete(Long id) {
         if (itemRepository.findById(id).isEmpty()) {
-            throw new ItemNotFoundException("Item with id " + id + " was not found");
+            return Mono.error(new ItemNotFoundException("Item with id " + id + " was not found"));
         }
         itemRepository.deleteById(id);
         return Mono.empty();

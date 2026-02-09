@@ -8,18 +8,56 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.DynamicPropertyRegistry;
+import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.web.reactive.server.WebTestClient;
+import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.containers.wait.strategy.Wait;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
 
-@SpringBootTest(classes = UserAccounterApp.class)
-@ActiveProfiles("test")
+@SpringBootTest(
+        webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
+        classes = UserAccounterApp.class)
 @AutoConfigureWebTestClient
-class UserControllerTest extends AbstractIntegrationTest {
+@Testcontainers
+@ActiveProfiles("test")
+class UserControllerTest {
+    @LocalServerPort
+    private String port;
 
     @Autowired
     private WebTestClient webTestClient;
 
+    @Container
+    static final PostgreSQLContainer<?> POSTGRES =
+            new PostgreSQLContainer<>("postgres:15-alpine")
+                    .withDatabaseName("testdb")
+                    .withUsername("postgres")
+                    .withPassword("password")
+                    .waitingFor(Wait.forListeningPort());
+
+    @DynamicPropertySource
+    static void registerPgProperties(DynamicPropertyRegistry registry) {
+        //r2dbc props
+        String jdbcUrl = POSTGRES.getJdbcUrl();
+        registry.add("spring.r2dbc.url",
+                () -> "r2dbc:postgresql://" + POSTGRES.getHost() + ":" +
+                        POSTGRES.getMappedPort(5432) +
+                        "/testdb");
+        registry.add("spring.r2dbc.username", POSTGRES::getUsername);
+        registry.add("spring.r2dbc.password", POSTGRES::getPassword);
+        // jdbc liquibase props
+        registry.add("spring.flyway.url", POSTGRES::getJdbcUrl);
+        registry.add("spring.flyway.user", POSTGRES::getUsername);
+        registry.add("spring.flyway.password", POSTGRES::getPassword);
+        registry.add("spring.flyway.enabled", () -> true);
+        registry.add("spring.flyway.locations", () -> "classpath:db/migration");
+        registry.add("spring.flyway.baseline-on-migrate", () -> true);
+    }
     /* ---------------- CREATE ---------------- */
 
     @Test
@@ -146,5 +184,6 @@ class UserControllerTest extends AbstractIntegrationTest {
                         .build())
                 .exchange()
                 .expectStatus().isNotFound();
+
     }
 }

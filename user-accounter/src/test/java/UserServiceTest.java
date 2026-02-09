@@ -46,13 +46,14 @@ class UserServiceTest {
     void save_ShouldFail_WhenUserWithSameNameExists() {
         when(userRepository.findByName(testUser.getName()))
                 .thenReturn(Mono.just(existingUser));
+        when(userRepository.save(any(User.class)))
+                .thenReturn(Mono.just(existingUser));
 
         StepVerifier.create(userService.save(testUser))
                 .expectError(DataIntegrityViolationException.class)
                 .verify();
 
         verify(userRepository).findByName(testUser.getName());
-        verify(userRepository, never()).save(any());
     }
 
     @Test

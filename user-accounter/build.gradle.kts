@@ -21,9 +21,13 @@ repositories {
 dependencies {
     implementation("org.springframework.boot:spring-boot-starter-webflux")
     implementation("org.springframework.boot:spring-boot-starter-data-r2dbc")
+    implementation("org.springframework.boot:spring-boot-starter-jdbc")
 
     implementation("org.springdoc:springdoc-openapi-starter-webflux-api:2.8.14")
     implementation("org.postgresql:r2dbc-postgresql:1.1.1.RELEASE")
+
+    implementation("org.flywaydb:flyway-database-postgresql")
+    implementation("org.flywaydb:flyway-core")
 
     implementation("org.springframework.boot:spring-boot-starter-validation")
     implementation("org.springframework.cloud:spring-cloud-starter-config")
@@ -38,6 +42,7 @@ dependencies {
 
     testImplementation("io.projectreactor:reactor-test")
     testImplementation("org.springframework.boot:spring-boot-starter-test")
+    testImplementation("org.testcontainers:testcontainers:2.0.2")
     testImplementation("org.testcontainers:junit-jupiter")
     testImplementation("org.testcontainers:postgresql")
     testImplementation("io.rest-assured:rest-assured:5.5.6")

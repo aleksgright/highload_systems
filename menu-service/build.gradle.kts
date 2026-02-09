@@ -32,11 +32,17 @@ dependencies {
     implementation("org.springframework.cloud:spring-cloud-starter-netflix-eureka-client")
     implementation("com.playtika.reactivefeign:feign-reactor-spring-cloud-starter:4.2.1")
 
+    implementation("org.flywaydb:flyway-database-postgresql")
+    implementation("org.flywaydb:flyway-core")
+
     runtimeOnly("org.postgresql:postgresql")
+
 
     compileOnly("org.projectlombok:lombok")
     annotationProcessor("org.projectlombok:lombok")
 
+    testImplementation("org.flywaydb:flyway-core")
+    testImplementation("io.projectreactor:reactor-test")
     testImplementation("org.mockito:mockito-core:2.1.0")
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("org.testcontainers:junit-jupiter")
